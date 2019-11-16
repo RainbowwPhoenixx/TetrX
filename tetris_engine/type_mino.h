@@ -10,6 +10,10 @@ typedef struct {
 } Tmino;
 
 // Prototypes
+Tcoordinate_diff getMinoXDiff (Tmino *mino);
+void setMinoXDiff (Tmino *mino, Tcoordinate_diff new_x);
+Tcoordinate_diff getMinoYDiff (Tmino *mino);
+void setMinoYDiff (Tmino *mino, Tcoordinate_diff new_y);
 Tmino createMino (Tcoordinate_diff x, Tcoordinate_diff y);
 
 #endif
