@@ -23,5 +23,5 @@ Tmatrix createMatrix () {
 
 // Useful functions
 bool isMinoAtPosEmpty (Tmatrix *matrix, Tcoordinate x, Tcoordinate y) {
-  return (matrix->mat[x][y] == EMPTY);
+  return (getMatrixShapeAtPos(matrix, x, y) == EMPTY);
 }
