@@ -13,4 +13,14 @@ typedef struct {
   Tcoordinate x, y;               // Position of the tetrimino on the matrix
 } Ttetrimino;
 
+// Accessor prototypes
+Tshape getTetriminoShape (Ttetrimino *t);
+void setTetriminoShape (Ttetrimino *t, Tshape new_shape);
+Tmino *getIthMino (Ttetrimino *t, int i);
+void setIthMino (Ttetrimino *t, int i, Tmino new_mino);
+Tcoordinate getTetriminoX (Ttetrimino *t);
+void setTetriminoX (Ttetrimino *t, Tcoordinate new_x);
+Tcoordinate getTetriminoY (Ttetrimino *t);
+void setTetriminoY (Ttetrimino *t, Tcoordinate new_y);
+
 #endif
