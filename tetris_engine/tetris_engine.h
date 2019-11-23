@@ -8,5 +8,6 @@
 #include "type_tetrimino.h"
 #include "type_matrix.h"
 #include "type_next_queue.h"
+#include "type_board.h"
 
 #endif
