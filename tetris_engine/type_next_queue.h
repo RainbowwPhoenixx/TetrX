@@ -1,0 +1,25 @@
+#ifndef __TYPE_NEXT_QUEUE_H__
+#define __TYPE_NEXT_QUEUE_H__
+
+#include "general_library.h"
+#include "type_shape.h"
+
+typedef struct {
+  Tshape queue[C_QUEUE_LENGTH];
+  Tbyte queue_length;
+} Tnext_queue;
+
+// Accessors
+Tshape getIthNextPiece(Tnext_queue *next_queue, Tbyte i);
+void setIthNextPiece(Tnext_queue *next_queue, Tbyte i, Tshape new_shape);
+Tbyte getNextQueueLength (Tnext_queue *next_queue);
+void setNextQueueLength (Tnext_queue *next_queue, Tbyte new_length);
+
+// Useful functions
+void advanceNextQueue (Tnext_queue *next_queue);
+void addBagToNextQueue (Tnext_queue *next_queue);
+
+// Constructor
+Tnext_queue createNextQueue ();
+
+#endif
