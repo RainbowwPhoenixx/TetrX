@@ -38,7 +38,7 @@ void addBagToNextQueue (Tnext_queue *next_queue) {
   // Adds a 7 bag to the end of the queue
   Tshape bag[] = {L, J, S, Z, O, I, T};
 
-  for (Tbyte i = 7; i >= 0; i--) {
+  for (Tbyte i = 7; i > 0; i--) {
     // Get a random piece form the list
     Tbyte choice = getRandomInteger (i);
     // Put it into the queue
