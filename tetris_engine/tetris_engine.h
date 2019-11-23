@@ -5,6 +5,7 @@
 #include "general_library.h"
 #include "type_shape.h"
 #include "type_mino.h"
+#include "type_tetrimino.h"
 #include "type_matrix.h"
 #include "type_next_queue.h"
 
