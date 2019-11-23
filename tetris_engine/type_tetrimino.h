@@ -23,4 +23,7 @@ void setTetriminoX (Ttetrimino *t, Tcoordinate new_x);
 Tcoordinate getTetriminoY (Ttetrimino *t);
 void setTetriminoY (Ttetrimino *t, Tcoordinate new_y);
 
+// Constructor
+Ttetrimino createTetrimino (Tshape tetrimino_shape);
+
 #endif
