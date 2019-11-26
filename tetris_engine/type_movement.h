@@ -2,6 +2,7 @@
 #define __TYPE_MOVEMENT_H__
 
 #include "general_library.h"
+#include <stdbool.h>
 
 typedef enum {MV_LEFT  = 0x01, // 0b00000001
               MV_RIGHT = 0x02, // 0b00000010
@@ -18,6 +19,6 @@ typedef short Tmovement;
 
 Tmovement createMovementWord ();
 void addMovementToWord (Tmovement *mv_word, Tpossible_movement mv);
-int isMovementInWord (Tmovement *mv_word, Tpossible_movement mv);
+bool isMovementInWord (Tmovement *mv_word, Tpossible_movement mv);
 
 #endif
