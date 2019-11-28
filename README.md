@@ -11,3 +11,12 @@ Switching to C is also an opportunity to :
 ## How to install ?
 
 The project is currently not in a usable state. Come back later.
+
+## To do
+
+- Make the ncurses library be linked statically for compatibility with computers where ncurses is not installed
+- Implement rotation (SRS)
+- Implement game mechanics
+- Create a main program
+- Make keys configurable
+- Create a graphical interface
