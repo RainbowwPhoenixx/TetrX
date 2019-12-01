@@ -118,6 +118,7 @@ Ttetrimino createTetrimino (Tshape tetrimino_shape) {
   setTetriminoY (&t, TETRIMINO_SPAWN_Y);
 
   setTetriminoMinos (&t, 0);
+  setTetriminoRotationState (&t, R0);
 
   return t;
 }

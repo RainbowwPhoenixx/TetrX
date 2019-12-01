@@ -3,7 +3,7 @@
 
 // Declaration of general purpose types
 typedef unsigned char Tbyte;
-typedef unsigned char Tcoordinate;    // Only 1 byte needed to represent a coordinate
+typedef signed char Tcoordinate;    // Only 1 byte needed to represent a coordinate
 typedef signed char Tcoordinate_diff; // Only 1 byte needed to represent a coordinate difference
 
 // Declaration of constants
