@@ -1,7 +1,7 @@
 #ifndef __TYPE_MATRIX_H__
 #define __TYPE_MATRIX_H__
 
-#include "stdbool.h"
+#include <stdbool.h>
 
 #include "general_library.h"
 #include "type_shape.h"
