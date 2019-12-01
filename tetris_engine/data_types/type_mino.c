@@ -1,5 +1,6 @@
 #include "type_mino.h"
 
+// Accessors
 Tcoordinate_diff getMinoXDiff (Tmino *mino) {
   return mino->x;
 }
@@ -14,9 +15,15 @@ void setMinoYDiff (Tmino *mino, Tcoordinate_diff new_y) {
   mino->y = new_y;
 }
 
+// Useful
 Tmino createMino (Tcoordinate_diff x, Tcoordinate_diff y) {
   Tmino mino;
   setMinoXDiff (&mino, x);
   setMinoYDiff (&mino, y);
   return mino;
+}
+
+void copyMino (Tmino *dest, Tmino *src) {
+  setMinoXDiff (dest, getMinoXDiff (dest));
+  setMinoYDiff (dest, getMinoYDiff (dest));
 }

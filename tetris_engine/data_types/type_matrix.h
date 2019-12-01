@@ -19,5 +19,6 @@ Tmatrix createMatrix ();
 
 // Useful functions protoypes
 bool isMinoAtPosEmpty (Tmatrix *matrix, Tcoordinate x, Tcoordinate y);
+void copyMatrix (Tmatrix *dest, Tmatrix *src);
 
 #endif

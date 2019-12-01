@@ -25,4 +25,7 @@ void setBoardHoldPiece (Tboard *board, Tshape new_hold_piece);
 // Constructor
 Tboard createBoard ();
 
+// Copy
+void copyBoard (Tboard *dest, Tboard *src);
+
 #endif

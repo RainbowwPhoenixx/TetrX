@@ -38,4 +38,6 @@ void moveTetriminoDown (Ttetrimino *t);
 void moveTetriminoCW (Ttetrimino *t);
 void moveTetriminoCCW (Ttetrimino *t);
 
+void copyTetrimino (Ttetrimino *dest, Ttetrimino *src);
+
 #endif

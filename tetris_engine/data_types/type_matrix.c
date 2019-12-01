@@ -25,3 +25,11 @@ Tmatrix createMatrix () {
 bool isMinoAtPosEmpty (Tmatrix *matrix, Tcoordinate x, Tcoordinate y) {
   return (getMatrixShapeAtPos(matrix, x, y) == EMPTY);
 }
+
+void copyMatrix (Tmatrix *dest, Tmatrix *src) {
+  for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
+    for (Tcoordinate j = 0; j < C_MATRIX_HEIGHT; j++) {
+      setMatrixShapeAtPos (dest, i, j, getMatrixShapeAtPos (src, i, j));
+    }
+  }
+}

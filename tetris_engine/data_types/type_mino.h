@@ -14,6 +14,9 @@ Tcoordinate_diff getMinoXDiff (Tmino *mino);
 void setMinoXDiff (Tmino *mino, Tcoordinate_diff new_x);
 Tcoordinate_diff getMinoYDiff (Tmino *mino);
 void setMinoYDiff (Tmino *mino, Tcoordinate_diff new_y);
+
+// Useful
 Tmino createMino (Tcoordinate_diff x, Tcoordinate_diff y);
+void copyMino (Tmino *dest, Tmino *src);
 
 #endif

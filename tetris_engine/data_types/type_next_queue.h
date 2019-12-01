@@ -22,4 +22,7 @@ void addBagToNextQueue (Tnext_queue *next_queue);
 // Constructor
 Tnext_queue createNextQueue ();
 
+// Copy
+void copyNextQueue (Tnext_queue *dest, Tnext_queue *src);
+
 #endif

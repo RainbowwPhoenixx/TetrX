@@ -95,10 +95,10 @@ void setTetriminoY (Ttetrimino *t, Tcoordinate new_y) {
   t->y = new_y;
 }
 
-Trotation_state getTetriminoRotationState (Ttetrimino *t) {
+static Trotation_state getTetriminoRotationState (Ttetrimino *t) {
   return t->rotation_state;
 }
-void setTetriminoRotationState (Ttetrimino *t, Trotation_state rot_state) {
+static void setTetriminoRotationState (Ttetrimino *t, Trotation_state rot_state) {
   t->rotation_state = rot_state;
 }
 
@@ -146,4 +146,16 @@ void moveTetriminoCW (Ttetrimino *t) {
 void moveTetriminoCCW (Ttetrimino *t) {
   setTetriminoRotationState (t, (getTetriminoRotationState (t)-1) % 4);
   setTetriminoMinos (t, getTetriminoRotationState (t));
+}
+
+// Copy
+void copyTetrimino (Ttetrimino *dest, Ttetrimino *src) {
+  setTetriminoShape (dest, getTetriminoShape (src));
+  setTetriminoRotationState (dest, getTetriminoRotationState (src));
+  setTetriminoX (dest, getTetriminoX (src));
+  setTetriminoY (dest, getTetriminoY (src));
+
+  for (Tbyte i = 0; i < NUMBER_OF_MINOS; i++) {
+    copyMino (getIthMino (dest, i), getIthMino (src, i));
+  }
 }

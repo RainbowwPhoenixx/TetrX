@@ -40,3 +40,11 @@ Tboard createBoard () {
 
   return b;
 }
+
+// Copy
+void copyBoard (Tboard *dest, Tboard *src) {
+  copyMatrix (getBoardMatrix (dest), getBoardMatrix (src));
+  copyTetrimino (getBoardActiveTetrimino (dest), getBoardActiveTetrimino (src));
+  setBoardHoldPiece (dest, getBoardHoldPiece (src));
+  copyNextQueue (getBoardNextQueue (dest), getBoardNextQueue (src));
+}

@@ -63,3 +63,12 @@ Tnext_queue createNextQueue () {
 
   return next_queue;
 }
+
+// Copy
+void copyNextQueue (Tnext_queue *dest, Tnext_queue *src) {
+  setNextQueueLength (dest, getNextQueueLength (src));
+
+  for (Tbyte i = 0; i < getNextQueueLength (dest); i++) {
+    setIthNextPiece (dest, i, getIthNextPiece (src, i));
+  }
+}
