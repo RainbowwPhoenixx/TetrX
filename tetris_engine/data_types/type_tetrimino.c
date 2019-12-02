@@ -95,7 +95,7 @@ void setTetriminoY (Ttetrimino *t, Tcoordinate new_y) {
   t->y = new_y;
 }
 
-static Trotation_state getTetriminoRotationState (Ttetrimino *t) {
+Trotation_state getTetriminoRotationState (Ttetrimino *t) {
   return t->rotation_state;
 }
 static void setTetriminoRotationState (Ttetrimino *t, Trotation_state rot_state) {

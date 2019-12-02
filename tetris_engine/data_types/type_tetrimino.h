@@ -25,6 +25,7 @@ Tcoordinate getTetriminoX (Ttetrimino *t);
 void setTetriminoX (Ttetrimino *t, Tcoordinate new_x);
 Tcoordinate getTetriminoY (Ttetrimino *t);
 void setTetriminoY (Ttetrimino *t, Tcoordinate new_y);
+Trotation_state getTetriminoRotationState (Ttetrimino *t);
 
 // Constructor
 Ttetrimino createTetrimino (Tshape tetrimino_shape);
