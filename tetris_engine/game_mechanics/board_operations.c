@@ -157,7 +157,7 @@ static void performRotateCCW (Tboard *b) {
     Tboard tmp_board;
     Tcoordinate_diff (*kicks)[2];
     copyBoard (&tmp_board, b);
-    
+
     // Rotate the piece
     moveTetriminoCCW (t);
     Ttetrimino piece_no_kicks = *t;
@@ -185,7 +185,16 @@ static void performRotateCCW (Tboard *b) {
   }
 }
 static void performHold (Tboard *b) {
+  Ttetrimino *t = getBoardActiveTetrimino (b);
+  Tshape tmp_shape = getBoardHoldPiece (b);
 
+  setBoardHoldPiece (b, getTetriminoShape (t));
+
+  if (tmp_shape == EMPTY) {
+    popTetriminoFromQueue (b);
+  } else {
+    *t = createTetrimino (tmp_shape);
+  }
 }
 
 void applyInput (Tboard *b, Tmovement mv) {
