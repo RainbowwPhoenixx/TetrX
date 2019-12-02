@@ -2,6 +2,15 @@
 #include "terminal_interface.h"
 #include "../tetris_engine/tetris_engine.h"
 
+#define COL_L 1
+#define COL_J 2
+#define COL_S 3
+#define COL_Z 4
+#define COL_O 5
+#define COL_I 6
+#define COL_T 7
+#define COL_EMPTY 8
+
 #define MAX_CHAR_SKIN_WIDTH 85
 
 #define MATRIX_WINDOW_X 12
@@ -42,16 +51,21 @@ static void initDisplay () {
   curs_set(FALSE); // Turn off cursor
 
   // Define all the colors
-  init_color (1, 1000, 500, 0);
-  init_color (2, 1000, 0  , 0);
-  init_pair (L+1    , COLOR_WHITE, 1            );
-  init_pair (J+1    , COLOR_WHITE, COLOR_BLUE   );
-  init_pair (S+1    , COLOR_WHITE, COLOR_GREEN  );
-  init_pair (Z+1    , COLOR_WHITE, 2            );
-  init_pair (O+1    , COLOR_WHITE, COLOR_YELLOW );
-  init_pair (I+1    , COLOR_WHITE, COLOR_CYAN   );
-  init_pair (T+1    , COLOR_WHITE, COLOR_MAGENTA);
-  init_pair (EMPTY+1, COLOR_WHITE, -1           );
+  init_color (COL_L    , 1000,  500,    0);
+  init_color (COL_J    ,    0,    0, 1000);
+  init_color (COL_S    ,    0, 1000,    0);
+  init_color (COL_Z    , 1000,    0,    0);
+  init_color (COL_O    , 1000, 1000,    0);
+  init_color (COL_I    ,    0, 1000, 1000);
+  init_color (COL_T    , 1000,    0, 1000);
+  init_pair (COL_L    , COLOR_WHITE, COL_L    );
+  init_pair (COL_J    , COLOR_WHITE, COL_J    );
+  init_pair (COL_S    , COLOR_WHITE, COL_S    );
+  init_pair (COL_Z    , COLOR_WHITE, COL_Z    );
+  init_pair (COL_O    , COLOR_WHITE, COL_O    );
+  init_pair (COL_I    , COLOR_WHITE, COL_I    );
+  init_pair (COL_T    , COLOR_WHITE, COL_T    );
+  init_pair (COL_EMPTY, COLOR_WHITE, -1       );
 
   // Init the windows
   win_matrix = newwin (MATRIX_WINDOW_HEIGHT, MATRIX_WINDOW_WIDTH, MATRIX_WINDOW_Y, MATRIX_WINDOW_X);
@@ -87,6 +101,19 @@ static void displaySkin () {
   refresh();
 }
 
+static int getColorFromShape (Tshape shape) {
+  switch (shape) {
+    case L    : return COL_L    ;
+    case J    : return COL_J    ;
+    case S    : return COL_S    ;
+    case Z    : return COL_Z    ;
+    case O    : return COL_O    ;
+    case I    : return COL_I    ;
+    case T    : return COL_T    ;
+    case EMPTY: return COL_EMPTY;
+  }
+}
+
 static void translateCoordinates (Tcoordinate x, Tcoordinate y, Tcoordinate x_origin, Tcoordinate y_origin, Tcoordinate *real_x, Tcoordinate *real_y) {
   // Translates a pair of coordinates in the mino coordinate system into the terminal coordinate system
   *real_x = x_origin + 2*x;
@@ -99,13 +126,15 @@ static void showMinoAtTerminalCoords (WINDOW *win, Tcoordinate x, Tcoordinate y)
 
 static void showNextQueue (Tnext_queue *next_queue) {
   // Shows the pieces of the next queue in the right spot
+  werase(win_next);
+
   for (Tbyte j = 0; j < NEXT_DISPLAY_AMOUNT; j++) {
     Ttetrimino tmp_t = createTetrimino (getIthNextPiece (next_queue, j));
     Ttetrimino *t = &tmp_t;
     if (getTetriminoShape (t) != EMPTY) {
       Tcoordinate real_x, real_y;
       Tshape tmp_shape = getTetriminoShape (t);
-      wattron (win_next, COLOR_PAIR(tmp_shape + 1));
+      wattron (win_next, COLOR_PAIR(getColorFromShape (tmp_shape)));
 
       for (Tbyte i = 0; i < NUMBER_OF_MINOS; i++) {
         Tmino *tmp_mino = getIthMino (t, i);
@@ -113,7 +142,7 @@ static void showNextQueue (Tnext_queue *next_queue) {
         showMinoAtTerminalCoords (win_next, real_x, real_y);
       }
 
-      wattroff (win_next, COLOR_PAIR(tmp_shape + 1));
+      wattroff (win_next, COLOR_PAIR(getColorFromShape (tmp_shape)));
     }
   }
 }
@@ -124,7 +153,7 @@ static void showHold (Tshape hold) {
   if (getTetriminoShape (t) != EMPTY) {
     Tcoordinate real_x, real_y;
     Tshape tmp_shape = getTetriminoShape (t);
-    wattron (win_hold, COLOR_PAIR(tmp_shape + 1));
+    wattron (win_hold, COLOR_PAIR(getColorFromShape (tmp_shape)));
 
     for (Tbyte i = 0; i < NUMBER_OF_MINOS; i++) {
       Tmino *tmp_mino = getIthMino (t, i);
@@ -132,7 +161,7 @@ static void showHold (Tshape hold) {
       showMinoAtTerminalCoords (win_hold, real_x, real_y);
     }
 
-    wattroff (win_hold, COLOR_PAIR(tmp_shape + 1));
+    wattroff (win_hold, COLOR_PAIR(getColorFromShape (tmp_shape)));
   }
 }
 static void showActiveTetrimino (Ttetrimino *t) {
@@ -140,7 +169,7 @@ static void showActiveTetrimino (Ttetrimino *t) {
   if (getTetriminoShape (t) != EMPTY) {
     Tcoordinate real_x, real_y;
     Tshape tmp_shape = getTetriminoShape (t);
-    wattron (win_matrix, COLOR_PAIR(tmp_shape + 1));
+    wattron (win_matrix, COLOR_PAIR(getColorFromShape (tmp_shape)));
 
     for (Tbyte i = 0; i < NUMBER_OF_MINOS; i++) {
       Tmino *tmp_mino = getIthMino (t, i);
@@ -148,7 +177,7 @@ static void showActiveTetrimino (Ttetrimino *t) {
       showMinoAtTerminalCoords (win_matrix, real_x, real_y);
     }
 
-    wattroff (win_matrix, COLOR_PAIR(tmp_shape + 1));
+    wattroff (win_matrix, COLOR_PAIR(getColorFromShape (tmp_shape)));
   }
 }
 static void showMatrix (Tmatrix *matrix) {
@@ -158,11 +187,11 @@ static void showMatrix (Tmatrix *matrix) {
   for (Tcoordinate i = 0; i < MATRIX_DISPLAY_WIDTH; i++) {
     for (Tcoordinate j = 0; j < MATRIX_DISPLAY_HEIGHT; j++) {
       Tshape tmp_shape = getMatrixShapeAtPos (matrix, i, j);
-      wattron (win_matrix, COLOR_PAIR(tmp_shape + 1));
+      wattron (win_matrix, COLOR_PAIR(getColorFromShape (tmp_shape)));
       translateCoordinates (i, j, 0, MATRIX_WINDOW_HEIGHT-1, &real_x, &real_y);
       showMinoAtTerminalCoords (win_matrix, real_x, real_y);
       // wrefresh (win_matrix);
-      wattroff (win_matrix, COLOR_PAIR(tmp_shape + 1));
+      wattroff (win_matrix, COLOR_PAIR(getColorFromShape (tmp_shape)));
     }
   }
 }
