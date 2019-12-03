@@ -50,6 +50,38 @@ bool isBoardStateValid (Tboard *b) {
 
 // Game mechanics implementation
 
+void clearLines (Tboard *b) {
+  Tmatrix *tmp_matrix = getBoardMatrix (b);
+  Tcoordinate lines_to_clear[4];
+  Tbyte number_of_lines_to_clear = 0;
+
+  // Find full lines
+  for (Tcoordinate line = 0; line < C_MATRIX_HEIGHT; line++) {
+    bool is_line_full = true;
+    for (Tcoordinate column = 0; column < C_MATRIX_WIDTH; column++) {
+      if (isMinoAtPosEmpty (tmp_matrix, column, line)) {
+        is_line_full = false;
+      }
+    }
+
+    if (is_line_full) {
+      lines_to_clear[number_of_lines_to_clear] = line;
+      number_of_lines_to_clear++;
+    }
+  }
+
+  // If no lines to clear, stop here
+  if (number_of_lines_to_clear == 0) return;
+
+  // Delete the full lines and pull down the ones above
+  for (Tcoordinate line_number = number_of_lines_to_clear-1; line_number >= 0; line_number--) {
+    for (Tcoordinate line = lines_to_clear[line_number]; line < C_MATRIX_HEIGHT-1; line++) {
+      for (Tbyte i = 0; i < C_MATRIX_WIDTH; i++) {
+        setMatrixShapeAtPos (tmp_matrix, i, line, getMatrixShapeAtPos (tmp_matrix, i, line+1));
+      }
+    }
+  }
+}
 void lockActiveTetrimino (Tboard *b) {
   Ttetrimino *t = getBoardActiveTetrimino (b);
   Tmatrix *m = getBoardMatrix (b);
