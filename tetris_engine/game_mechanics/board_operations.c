@@ -50,7 +50,7 @@ bool isBoardStateValid (Tboard *b) {
 
 // Game mechanics implementation
 
-static void lockActiveTetrimino (Tboard *b) {
+void lockActiveTetrimino (Tboard *b) {
   Ttetrimino *t = getBoardActiveTetrimino (b);
   Tmatrix *m = getBoardMatrix (b);
 
@@ -113,8 +113,7 @@ static void performHardDrop  (Tboard *b) {
     moveTetriminoDown (getBoardActiveTetrimino (&tmp_board));
   } while(isBoardStateValid (&tmp_board));
 
-  lockActiveTetrimino (b);
-  popTetriminoFromQueue (b);
+  setBoardShouldEndTurnStatus (b, true);
 }
 static void performRotateCW (Tboard *b) {
   Ttetrimino *t = getBoardActiveTetrimino (b);
@@ -185,6 +184,10 @@ static void performRotateCCW (Tboard *b) {
   }
 }
 static void performHold (Tboard *b) {
+  if (getBoardHasHeldThisTurnStatus (b)) {
+    return;
+  }
+
   Ttetrimino *t = getBoardActiveTetrimino (b);
   Tshape tmp_shape = getBoardHoldPiece (b);
 
@@ -195,6 +198,8 @@ static void performHold (Tboard *b) {
   } else {
     *t = createTetrimino (tmp_shape);
   }
+
+  setBoardHasHeldThisTurnStatus (b, true);
 }
 
 void applyInput (Tboard *b, Tmovement mv) {
