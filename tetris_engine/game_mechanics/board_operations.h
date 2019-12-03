@@ -6,5 +6,6 @@
 
 bool isBoardStateValid (Tboard *b);
 void applyInput (Tboard *b, Tmovement mv);
+void popTetriminoFromQueue (Tboard *b);
 
 #endif

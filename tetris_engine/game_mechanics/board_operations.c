@@ -59,7 +59,7 @@ static void lockActiveTetrimino (Tboard *b) {
     setMatrixShapeAtPos (m, getTetriminoX (t) + getMinoXDiff (tmp_mino), getTetriminoY (t) + getMinoYDiff (tmp_mino), getTetriminoShape (t));
   }
 }
-static void popTetriminoFromQueue (Tboard *b) {
+void popTetriminoFromQueue (Tboard *b) {
   Ttetrimino *t = getBoardActiveTetrimino (b);
   Tnext_queue *next_queue = getBoardNextQueue (b);
   *t = createTetrimino (getIthNextPiece (next_queue, 0));
