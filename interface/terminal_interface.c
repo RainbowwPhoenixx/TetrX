@@ -112,6 +112,8 @@ static int getColorFromShape (Tshape shape) {
     case T    : return COL_T    ;
     case EMPTY: return COL_EMPTY;
   }
+
+  return 0;
 }
 
 static void translateCoordinates (Tcoordinate x, Tcoordinate y, Tcoordinate x_origin, Tcoordinate y_origin, Tcoordinate *real_x, Tcoordinate *real_y) {
@@ -148,6 +150,8 @@ static void showNextQueue (Tnext_queue *next_queue) {
 }
 static void showHold (Tshape hold) {
   // Displays the current held piece
+  werase (win_hold);
+
   Ttetrimino tmp_t = createTetrimino (hold);
   Ttetrimino *t = &tmp_t;
   if (getTetriminoShape (t) != EMPTY) {
