@@ -1,6 +1,7 @@
 #include "board_operations.h"
 
 #define MINIMUM_QUEUE_LENGTH 8
+#define MAXIMUM_AUTHORIZED_HEIGHT 20
 
 static Tcoordinate_diff not_I_kicks[4][5][2] = {
   {{ 0,  0}, { -1, 0}, {-1,  1}, { 0, -2}, {-1, -2}},
@@ -50,6 +51,18 @@ bool isBoardStateValid (Tboard *b) {
 
 // Game mechanics implementation
 
+void checkLoss (Tboard *b) {
+  // Sets the board loss status if the player has lost
+
+  for (int i = 0; i < NUMBER_OF_MINOS; i++) {
+    Ttetrimino *tmp_tet = getBoardActiveTetrimino (b);
+    Tmino *tmp_mino = getIthMino (tmp_tet, i);
+    if (getTetriminoY (tmp_tet) + getMinoYDiff (tmp_mino) > MAXIMUM_AUTHORIZED_HEIGHT
+        || !isMinoAtPosEmpty (getBoardMatrix (b), getTetriminoX (tmp_tet) + getMinoXDiff (tmp_mino), getTetriminoY (tmp_tet) + getMinoYDiff (tmp_mino))) {
+      setBoardHasLostStatus (b, true);
+    }
+  }
+}
 void clearLines (Tboard *b) {
   Tmatrix *tmp_matrix = getBoardMatrix (b);
   Tcoordinate lines_to_clear[4];

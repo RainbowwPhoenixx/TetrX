@@ -9,5 +9,6 @@ void applyInput (Tboard *b, Tmovement mv);
 void popTetriminoFromQueue (Tboard *b);
 void lockActiveTetrimino (Tboard *b);
 void clearLines (Tboard *b);
+void checkLoss (Tboard *b);
 
 #endif
