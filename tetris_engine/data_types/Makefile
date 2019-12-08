@@ -1,30 +1,15 @@
-debug_flags = -g -D DEBUG -Wall -pedantic
 object_dir = ../../obj/
-all_targets = general_library_debug.o type_shape_debug.o type_movement_debug.o type_mino_debug.o type_next_queue_debug.o type_matrix_debug.o type_tetrimino_debug.o type_board_debug.o
+all_debug_targets = general_library_debug.o type_shape_debug.o type_movement_debug.o type_mino_debug.o type_next_queue_debug.o type_matrix_debug.o type_tetrimino_debug.o type_board_debug.o
+all_targets = general_library.o type_shape.o type_movement.o type_mino.o type_next_queue.o type_matrix.o type_tetrimino.o type_board.o
+
+all_debug:
+	make $(all_debug_targets)
+
+%_debug.o: %.c
+	gcc $(debug_flags) -c $< -o $(object_dir)$@
 
 all:
 	make $(all_targets)
 
-general_library_debug.o: general_library.c
-	gcc $(debug_flags) -c $< -o $(object_dir)$@
-
-type_shape_debug.o: type_shape.c general_library_debug.o
-	gcc $(debug_flags) -c $< -o $(object_dir)$@
-
-type_movement_debug.o: type_movement.c general_library_debug.o
-	gcc $(debug_flags) -c $< -o $(object_dir)$@
-
-type_mino_debug.o: type_mino.c type_shape_debug.o general_library_debug.o
-	gcc $(debug_flags) -c $< -o $(object_dir)$@
-
-type_next_queue_debug.o: type_next_queue.c type_shape_debug.o general_library_debug.o
-	gcc $(debug_flags) -c $< -o $(object_dir)$@
-
-type_matrix_debug.o: type_matrix.c type_shape_debug.o general_library_debug.o
-	gcc $(debug_flags) -c $< -o $(object_dir)$@
-
-type_tetrimino_debug.o: type_tetrimino.c type_mino_debug.o type_shape_debug.o general_library_debug.o
-	gcc $(debug_flags) -c $< -o $(object_dir)$@
-
-type_board_debug.o: type_board.c type_tetrimino_debug.o type_mino_debug.o type_shape_debug.o general_library_debug.o
-	gcc $(debug_flags) -c $< -o $(object_dir)$@
+%.o: %.c
+	gcc $(normal_flags) -c $< -o $(object_dir)$@

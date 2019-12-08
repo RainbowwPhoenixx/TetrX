@@ -1,9 +1,15 @@
-debug_flags = -g -D DEBUG -Wall -pedantic
 object_dir = ../../obj/
-all_targets = board_operations_debug.o
+all_debug_targets = board_operations_debug.o
+all_targets = board_operations.o
+
+all_debug:
+	make $(all_debug_targets)
+
+%_debug.o: %.c
+	gcc $(debug_flags) -c $< -o $(object_dir)$@
 
 all:
 	make $(all_targets)
 
-board_operations_debug.o: board_operations.c
-	gcc $(debug_flags) -c $< -o $(object_dir)$@
+%.o: %.c
+	gcc $(normal_flags) -c $< -o $(object_dir)$@

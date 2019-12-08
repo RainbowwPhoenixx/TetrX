@@ -1,9 +1,18 @@
-debug_flags = -g -D DEBUG -Wall -pedantic
+# debug_flags = -g -D DEBUG -Wall -pedantic
+# normal_flags = -O3
+link_flags = -lncurnses
 object_dir = ../obj/
-all_targets = terminal_interface_debug.o
+all_debug_targets = terminal_interface_debug.o
+all_targets = terminal_interface.o
+
+all_debug:
+	make $(all_debug_targets)
+
+%_debug.o: %.c
+	gcc $(debug_flags) -c $< -o $(object_dir)$@ $(link_flags)
 
 all:
 	make $(all_targets)
 
-terminal_interface_debug.o: terminal_interface.c
-	gcc $(debug_flags) -c $< -o $(object_dir)$@ -lncurses
+%.o: %.c
+	gcc $(normal_flags) -c $< -o $(object_dir)$@ $(link_flags)
