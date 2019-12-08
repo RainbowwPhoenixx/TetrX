@@ -12,10 +12,8 @@ Switching to C is also an opportunity to :
 
 - Clone the project in whatever directory you like
 - `cd` into the directory
-- Run the command `make TetrX_debug` to compile the program
-- To launch the game run `./bin/TetrX_debug`.
-
-You will no doubt have noticed that you can only compile the version with debug symbols as I haven't bothered making proper make recipes for a "normal" version.
+- Run the command `make TetrX` to compile the program
+- To launch the game run `./bin/TetrX`.
 
 ## To do
 
