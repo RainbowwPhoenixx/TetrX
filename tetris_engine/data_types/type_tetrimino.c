@@ -3,6 +3,7 @@
 #define TETRIMINO_SPAWN_X 4
 #define TETRIMINO_SPAWN_Y 20
 
+// Definitions for the different tetrimino shapes & rotations
 static Tcoordinate_diff L_initial_mino_positions[4][4][2] = { // [rotation_state][mino_index][x or y]
   {{-1,  0}, { 0,  0}, { 1,  0}, { 1,  1}}, // Initial pos for the L
   {{ 0, -1}, { 1, -1}, { 0,  0}, { 0,  1}},
@@ -47,8 +48,10 @@ static Tcoordinate_diff T_initial_mino_positions[4][4][2] = { // [rotation_state
 };
 
 static void setTetriminoMinos (Ttetrimino *t, Tbyte rotation_state) {
+  // Sets the given tetrimino into the given rotation state
   Tcoordinate_diff (*initial_mino_pos)[2];
 
+  // Select which tetrimino shape and rotation to use
   switch (getTetriminoShape (t)) {
     case L: initial_mino_pos = L_initial_mino_positions[rotation_state]; break;
     case J: initial_mino_pos = J_initial_mino_positions[rotation_state]; break;
@@ -60,6 +63,7 @@ static void setTetriminoMinos (Ttetrimino *t, Tbyte rotation_state) {
     case EMPTY: break;
   }
 
+  // Swap out the minos
   for (Tbyte i = 0; i < NUMBER_OF_MINOS; i++) {
     Tmino tmp_mino = createMino (initial_mino_pos[i][0], initial_mino_pos[i][1]);
     setIthMino (t, i, tmp_mino);
@@ -108,12 +112,14 @@ Ttetrimino createTetrimino (Tshape tetrimino_shape) {
 
   setTetriminoShape (&t, tetrimino_shape);
 
+  // If the given shape is EMPTY, set coordinates to 0 and return
   if (tetrimino_shape == EMPTY) {
     setTetriminoX (&t, 0);
     setTetriminoY (&t, 0);
     return t;
   }
 
+  // If not, init the minos and the rotation value
   setTetriminoX (&t, TETRIMINO_SPAWN_X);
   setTetriminoY (&t, TETRIMINO_SPAWN_Y);
 
@@ -127,30 +133,38 @@ Ttetrimino createTetrimino (Tshape tetrimino_shape) {
 
 // Translation
 void moveTetriminoRight (Ttetrimino *t) {
+  // Moves the tetrimino 1 to the right
   setTetriminoX (t, getTetriminoX (t) + 1);
 }
 void moveTetriminoLeft (Ttetrimino *t) {
+  // Moves the tetrimino 1 to the left
   setTetriminoX (t, getTetriminoX (t) - 1);
 }
 void moveTetriminoUp (Ttetrimino *t) {
+  // Moves the tetrimino 1 up
   setTetriminoY (t, getTetriminoY (t) + 1);
 }
 void moveTetriminoDown (Ttetrimino *t) {
+  // Moves the tetrimino 1 down
   setTetriminoY (t, getTetriminoY (t) - 1);
 }
 
 // Rotation
 void moveTetriminoCW (Ttetrimino *t) {
+  // Rotates the tetrimino clockwise
   setTetriminoRotationState (t, (getTetriminoRotationState (t)+1) % 4);
   setTetriminoMinos (t, getTetriminoRotationState (t));
 }
 void moveTetriminoCCW (Ttetrimino *t) {
+  // Rotates the tetrimino counter-clockwise
   setTetriminoRotationState (t, (getTetriminoRotationState (t)-1) % 4);
   setTetriminoMinos (t, getTetriminoRotationState (t));
 }
 
 // Copy
 void copyTetrimino (Ttetrimino *dest, Ttetrimino *src) {
+  // Copies the src tetrimino into dest
+
   setTetriminoShape (dest, getTetriminoShape (src));
   setTetriminoRotationState (dest, getTetriminoRotationState (src));
   setTetriminoX (dest, getTetriminoX (src));

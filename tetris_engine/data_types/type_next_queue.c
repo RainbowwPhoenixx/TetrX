@@ -33,7 +33,6 @@ static void addPieceToNextQueue (Tnext_queue *next_queue, Tshape piece) {
   // Up the queue length
   setNextQueueLength (next_queue, getNextQueueLength (next_queue)+1);
 }
-
 void addBagToNextQueue (Tnext_queue *next_queue) {
   // Adds a 7 bag to the end of the queue
   Tshape bag[] = {L, J, S, Z, O, I, T};

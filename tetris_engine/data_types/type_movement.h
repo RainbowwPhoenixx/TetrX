@@ -14,7 +14,7 @@ typedef enum {MV_LEFT  = 0x01, // 0b00000001
             } Tpossible_movement;
 
 typedef short Tmovement;
-// This movement type as sort of a boolean array for which keys are pressed.
+// This movement type acts as sort of a boolean array for which keys are pressed.
 // Setting and checking for inputs will work with bit masking
 
 Tmovement createMovementWord ();

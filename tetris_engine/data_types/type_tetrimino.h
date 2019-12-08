@@ -19,26 +19,33 @@ typedef struct {
 // Accessor prototypes
 Tshape getTetriminoShape (Ttetrimino *t);
 void setTetriminoShape (Ttetrimino *t, Tshape new_shape);
+
 Tmino *getIthMino (Ttetrimino *t, int i);
 void setIthMino (Ttetrimino *t, int i, Tmino new_mino);
+
 Tcoordinate getTetriminoX (Ttetrimino *t);
 void setTetriminoX (Ttetrimino *t, Tcoordinate new_x);
+
 Tcoordinate getTetriminoY (Ttetrimino *t);
 void setTetriminoY (Ttetrimino *t, Tcoordinate new_y);
+
 Trotation_state getTetriminoRotationState (Ttetrimino *t);
 
 // Constructor
 Ttetrimino createTetrimino (Tshape tetrimino_shape);
 
 // Useful
+// Translation
 void moveTetriminoRight (Ttetrimino *t);
 void moveTetriminoLeft (Ttetrimino *t);
 void moveTetriminoUp (Ttetrimino *t);
 void moveTetriminoDown (Ttetrimino *t);
 
+// Rotation
 void moveTetriminoCW (Ttetrimino *t);
 void moveTetriminoCCW (Ttetrimino *t);
 
+// Copying
 void copyTetrimino (Ttetrimino *dest, Ttetrimino *src);
 
 #endif

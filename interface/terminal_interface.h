@@ -3,6 +3,7 @@
 
 #include "type_interface.h"
 
+// Getters for the input and output terminal interfaces
 Tinterface_out getTerminalInterfaceOut ();
 Tinterface_in getTerminalInterfaceIn ();
 

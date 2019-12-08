@@ -49,10 +49,12 @@ bool getBoardShouldEndTurnStatus (Tboard *b) {
 void setBoardShouldEndTurnStatus (Tboard *b, bool new_state) {
   b->should_end_turn = new_state;
 }
+
 // Constructor
 Tboard createBoard () {
   Tboard b;
 
+  // Initialize each field
   setBoardMatrix (&b, createMatrix ());
   setBoardActiveTetrimino (&b, createTetrimino (EMPTY));
   setBoardNextQueue (&b, createNextQueue ());
@@ -66,6 +68,8 @@ Tboard createBoard () {
 
 // Copy
 void copyBoard (Tboard *dest, Tboard *src) {
+
+  // Copy each field of the tetrimino
   copyMatrix (getBoardMatrix (dest), getBoardMatrix (src));
   copyTetrimino (getBoardActiveTetrimino (dest), getBoardActiveTetrimino (src));
   setBoardHoldPiece (dest, getBoardHoldPiece (src));

@@ -1,6 +1,7 @@
 #include "singleplayer_mode.h"
 
 static void initGame (Tinterface_in IO_in, Tinterface_out IO_out) {
+  // Initialise the game
   IO_out.initDisplayFunc();
   IO_out.displaySkinFunc();
   IO_in.initInputFunc();
@@ -8,6 +9,7 @@ static void initGame (Tinterface_in IO_in, Tinterface_out IO_out) {
   initRandom ();
 }
 static void endGame (Tinterface_in IO_in, Tinterface_out IO_out) {
+  // Function to run right before the game ends
   IO_in.endInputFunc();
   IO_out.endDisplayFunc ();
 }
@@ -18,7 +20,7 @@ static void beginTurn (Tboard *b) {
   popTetriminoFromQueue (b);
 }
 static void endTurn (Tboard *b) {
-  // Perform tetrimino locking, line clearing, reset hold status, detect loss
+  // Perform tetrimino locking, line clearing, reset hold status, loss detection
 
   checkLoss (b);
   if (!getBoardHasLostStatus(b)) {
@@ -30,6 +32,7 @@ static void endTurn (Tboard *b) {
 }
 
 void playSingleplayer (Tinterface_in IO_in, Tinterface_out IO_out) {
+  // Play out a game of singleplayer tetris
 
   initGame(IO_in, IO_out);
   Tboard b = createBoard ();

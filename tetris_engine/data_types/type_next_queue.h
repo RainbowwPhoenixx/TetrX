@@ -12,6 +12,7 @@ typedef struct {
 // Accessors
 Tshape getIthNextPiece(Tnext_queue *next_queue, Tbyte i);
 void setIthNextPiece(Tnext_queue *next_queue, Tbyte i, Tshape new_shape);
+
 Tbyte getNextQueueLength (Tnext_queue *next_queue);
 void setNextQueueLength (Tnext_queue *next_queue, Tbyte new_length);
 

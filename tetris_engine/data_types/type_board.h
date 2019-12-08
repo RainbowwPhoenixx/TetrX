@@ -22,12 +22,16 @@ typedef struct {
 Tmatrix *getBoardMatrix (Tboard *board);
 Ttetrimino *getBoardActiveTetrimino (Tboard *board);
 Tnext_queue *getBoardNextQueue (Tboard *board);
+
 Tshape getBoardHoldPiece (Tboard *board);
 void setBoardHoldPiece (Tboard *board, Tshape new_hold_piece);
+
 bool getBoardHasHeldThisTurnStatus (Tboard *b);
 void setBoardHasHeldThisTurnStatus (Tboard *b, bool new_state);
+
 bool getBoardHasLostStatus (Tboard *b);
 void setBoardHasLostStatus (Tboard *b, bool new_state);
+
 bool getBoardShouldEndTurnStatus (Tboard *b);
 void setBoardShouldEndTurnStatus (Tboard *b, bool new_state);
 

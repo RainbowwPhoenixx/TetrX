@@ -3,6 +3,7 @@
 #include <time.h>
 
 void initRandom () {
+  // Initializes the seed
   srand(time(0));
 }
 

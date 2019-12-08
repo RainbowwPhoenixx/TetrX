@@ -3,6 +3,7 @@
 #define MINIMUM_QUEUE_LENGTH 8
 #define MAXIMUM_AUTHORIZED_HEIGHT 20
 
+// Kick for the different pieces [rotation_state][kick_index][x or y]
 static Tcoordinate_diff not_I_kicks[4][5][2] = {
   {{ 0,  0}, { -1, 0}, {-1,  1}, { 0, -2}, {-1, -2}},
   {{ 0,  0}, { 1,  0}, { 1, -1}, { 0,  2}, { 1,  2}},
@@ -18,10 +19,12 @@ static Tcoordinate_diff I_kicks[4][5][2] = {
 
 bool isBoardStateValid (Tboard *b) {
   // Checks that the position of the active tetrimino is valid in relation to the matrix.
+  // Returns true is the board is valid, false if not.
   Ttetrimino *t = getBoardActiveTetrimino (b);
 
   int i = 0;
   bool res = true;
+  // For each mino
   do {
     Tmino *tmp_mino = getIthMino (t, i);
     Tcoordinate tmp_x = getTetriminoX (t) + getMinoXDiff (tmp_mino);
@@ -116,10 +119,13 @@ void popTetriminoFromQueue (Tboard *b) {
   }
 }
 
+// Input handlers
 static void performMoveLeft (Tboard *b) {
+  // Save the current board state
   Tboard tmp_board;
   copyBoard (&tmp_board, b);
 
+  // Attempt to move left
   moveTetriminoLeft (getBoardActiveTetrimino (b));
 
   // If the new state is not valid, revert to previous state
@@ -128,9 +134,11 @@ static void performMoveLeft (Tboard *b) {
   }
 }
 static void performMoveRight (Tboard *b) {
+  // Save the current board state
   Tboard tmp_board;
   copyBoard (&tmp_board, b);
 
+  // Attempt to move right
   moveTetriminoRight (getBoardActiveTetrimino (b));
 
   // If the new state is not valid, revert to previous state
@@ -139,9 +147,11 @@ static void performMoveRight (Tboard *b) {
   }
 }
 static void performSoftDrop (Tboard *b) {
+  // Save the current board state
   Tboard tmp_board;
   copyBoard (&tmp_board, b);
 
+  // Attempt to move down
   moveTetriminoDown (getBoardActiveTetrimino (b));
 
   // If the new state is not valid, revert to previous state
@@ -150,9 +160,11 @@ static void performSoftDrop (Tboard *b) {
   }
 }
 static void performHardDrop  (Tboard *b) {
+  // Save the current board state
   Tboard tmp_board;
   copyBoard (&tmp_board, b);
 
+  // Move down until tetrimino hots the ground
   do {
     copyBoard (b, &tmp_board);
     moveTetriminoDown (getBoardActiveTetrimino (&tmp_board));
@@ -163,11 +175,13 @@ static void performHardDrop  (Tboard *b) {
 static void performRotateCW (Tboard *b) {
   Ttetrimino *t = getBoardActiveTetrimino (b);
 
-  if (getTetriminoShape (t) != O) { // The O doesn't rotate
+  // If the piece is not an O (the O does not rotate)
+  if (getTetriminoShape (t) != O) {
     Tboard tmp_board;
     Tcoordinate_diff (*kicks)[2];
     copyBoard (&tmp_board, b);
 
+    // Get the kicks for the avtive piece and its rotation state
     if (getTetriminoShape (t) == I) {
       kicks = I_kicks[getTetriminoRotationState (t)];
     } else {
@@ -197,7 +211,8 @@ static void performRotateCW (Tboard *b) {
 static void performRotateCCW (Tboard *b) {
   Ttetrimino *t = getBoardActiveTetrimino (b);
 
-  if (getTetriminoShape (t) != O) { // The O doesn't rotate
+  // If the piece is not an O (the O does not rotate)
+  if (getTetriminoShape (t) != O) {
     Tboard tmp_board;
     Tcoordinate_diff (*kicks)[2];
     copyBoard (&tmp_board, b);
@@ -206,6 +221,7 @@ static void performRotateCCW (Tboard *b) {
     moveTetriminoCCW (t);
     Ttetrimino piece_no_kicks = *t;
 
+    // Get the kicks for the avtive piece and its rotation state
     if (getTetriminoShape (t) == I) {
       kicks = I_kicks[getTetriminoRotationState (t)];
     } else {
@@ -229,25 +245,32 @@ static void performRotateCCW (Tboard *b) {
   }
 }
 static void performHold (Tboard *b) {
+  // If player has used hold, don't hold again
   if (getBoardHasHeldThisTurnStatus (b)) {
     return;
   }
 
   Ttetrimino *t = getBoardActiveTetrimino (b);
-  Tshape tmp_shape = getBoardHoldPiece (b);
 
+  // Swap the piece in the hold box with the active piece
+  Tshape tmp_shape = getBoardHoldPiece (b);
   setBoardHoldPiece (b, getTetriminoShape (t));
 
+  // If the active piece is now empty, it means that the hold box was empty so you should get another tetrimino from queue
+  // otherwise turn the piece shape that was in the hold into a tetrimino
   if (tmp_shape == EMPTY) {
     popTetriminoFromQueue (b);
   } else {
     *t = createTetrimino (tmp_shape);
   }
 
+  // Signal that the hold has been used this turn
   setBoardHasHeldThisTurnStatus (b, true);
 }
 
+// General input handler
 void applyInput (Tboard *b, Tmovement mv) {
+  // For each movement in the input, apply it to the board
   if (isMovementInWord (&mv, MV_LEFT )) performMoveLeft (b);
   if (isMovementInWord (&mv, MV_RIGHT)) performMoveRight (b);
   if (isMovementInWord (&mv, MV_CW   )) performRotateCW (b);

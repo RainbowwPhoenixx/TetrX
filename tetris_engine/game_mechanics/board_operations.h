@@ -4,11 +4,14 @@
 #include <stdbool.h>
 #include "../data_types/tetris_data_types.h"
 
+// Board functions
 bool isBoardStateValid (Tboard *b);
-void applyInput (Tboard *b, Tmovement mv);
 void popTetriminoFromQueue (Tboard *b);
 void lockActiveTetrimino (Tboard *b);
 void clearLines (Tboard *b);
 void checkLoss (Tboard *b);
+
+// Input handling
+void applyInput (Tboard *b, Tmovement mv);
 
 #endif

@@ -2,6 +2,7 @@
 #include "terminal_interface.h"
 #include "../tetris_engine/tetris_engine.h"
 
+// Definition of the color IDs for each of the shapes
 #define COL_L 1
 #define COL_J 2
 #define COL_S 3
@@ -13,6 +14,7 @@
 
 #define MAX_CHAR_SKIN_WIDTH 85
 
+// Definition of the different window sizes for each of the interface regions
 #define MATRIX_WINDOW_X 12
 #define MATRIX_WINDOW_Y 1
 #define MATRIX_WINDOW_HEIGHT 21
@@ -36,6 +38,7 @@
 
 const char mino_skin[] = "  ";
 
+// Declare all of the windows that define the different interface areas
 static WINDOW *win_matrix;
 static WINDOW *win_hold;
 static WINDOW *win_next;
@@ -45,6 +48,7 @@ static WINDOW *win_lines;
 // Output
 
 static void initDisplay () {
+  // Initialises everything that is necessary for the display
   initscr(); // Init ncurses
   start_color(); // Inits the colors and color pairs macros
   use_default_colors(); // Make the terminal not look like shit
@@ -73,15 +77,18 @@ static void initDisplay () {
   win_hold = newwin (HOLD_WINDOW_HEIGHT, HOLD_WINDOW_WIDTH, HOLD_WINDOW_Y, HOLD_WINDOW_X);
 }
 static void resetScreen () {
+  // Clears the whole terminal
   clear();
 }
 static void updateScreen() {
+  // Refreshes all of the surfaces
   refresh();
   wrefresh (win_matrix);
   wrefresh (win_next);
   wrefresh (win_hold);
 }
 static void endDisplay () {
+  // Does all of the necessary operations to close the display
   delwin(win_matrix);
   delwin(win_hold);
   delwin(win_next);
@@ -102,6 +109,7 @@ static void displaySkin () {
 }
 
 static int getColorFromShape (Tshape shape) {
+  // Returns the color ID corresponding to the given shape
   switch (shape) {
     case L    : return COL_L    ;
     case J    : return COL_J    ;
@@ -117,7 +125,7 @@ static int getColorFromShape (Tshape shape) {
 }
 
 static void translateCoordinates (Tcoordinate x, Tcoordinate y, Tcoordinate x_origin, Tcoordinate y_origin, Tcoordinate *real_x, Tcoordinate *real_y) {
-  // Translates a pair of coordinates in the mino coordinate system into the terminal coordinate system
+  // Translates a pair of coordinates from the mino coordinate system into the terminal coordinate system
   *real_x = x_origin + 2*x;
   *real_y = y_origin - y;
 }
@@ -128,8 +136,12 @@ static void showMinoAtTerminalCoords (WINDOW *win, Tcoordinate x, Tcoordinate y)
 
 static void showNextQueue (Tnext_queue *next_queue) {
   // Shows the pieces of the next queue in the right spot
+
+  // Clears the next window
   werase(win_next);
 
+  // For each piece in the queue that needs to be displayed,
+  // create the tetrimino associated with the shape and display it
   for (Tbyte j = 0; j < NEXT_DISPLAY_AMOUNT; j++) {
     Ttetrimino tmp_t = createTetrimino (getIthNextPiece (next_queue, j));
     Ttetrimino *t = &tmp_t;
@@ -138,6 +150,7 @@ static void showNextQueue (Tnext_queue *next_queue) {
       Tshape tmp_shape = getTetriminoShape (t);
       wattron (win_next, COLOR_PAIR(getColorFromShape (tmp_shape)));
 
+      // Display each mino
       for (Tbyte i = 0; i < NUMBER_OF_MINOS; i++) {
         Tmino *tmp_mino = getIthMino (t, i);
         translateCoordinates (1 + getMinoXDiff (tmp_mino), 0 + getMinoYDiff (tmp_mino), 1, 1 + NEXT_DISPLAY_SPACING*j, &real_x, &real_y);
@@ -150,8 +163,11 @@ static void showNextQueue (Tnext_queue *next_queue) {
 }
 static void showHold (Tshape hold) {
   // Displays the current held piece
+
+  // Resets the hold window
   werase (win_hold);
 
+  // Create the tetrimino associated with the held shape, then display it
   Ttetrimino tmp_t = createTetrimino (hold);
   Ttetrimino *t = &tmp_t;
   if (getTetriminoShape (t) != EMPTY) {
@@ -159,6 +175,7 @@ static void showHold (Tshape hold) {
     Tshape tmp_shape = getTetriminoShape (t);
     wattron (win_hold, COLOR_PAIR(getColorFromShape (tmp_shape)));
 
+    // Display each mino
     for (Tbyte i = 0; i < NUMBER_OF_MINOS; i++) {
       Tmino *tmp_mino = getIthMino (t, i);
       translateCoordinates (1 + getMinoXDiff (tmp_mino), 0 + getMinoYDiff (tmp_mino), 1, HOLD_WINDOW_HEIGHT-1, &real_x, &real_y);
@@ -175,6 +192,7 @@ static void showActiveTetrimino (Ttetrimino *t) {
     Tshape tmp_shape = getTetriminoShape (t);
     wattron (win_matrix, COLOR_PAIR(getColorFromShape (tmp_shape)));
 
+    // Display each mino
     for (Tbyte i = 0; i < NUMBER_OF_MINOS; i++) {
       Tmino *tmp_mino = getIthMino (t, i);
       translateCoordinates (getTetriminoX (t) + getMinoXDiff (tmp_mino), getTetriminoY (t) + getMinoYDiff (tmp_mino), 0, MATRIX_WINDOW_HEIGHT-1, &real_x, &real_y);
@@ -188,19 +206,20 @@ static void showMatrix (Tmatrix *matrix) {
   // Displays the minos in the matrix
   Tcoordinate real_x, real_y;
 
+  // For each mino in the matrix, compute its position the display it
   for (Tcoordinate i = 0; i < MATRIX_DISPLAY_WIDTH; i++) {
     for (Tcoordinate j = 0; j < MATRIX_DISPLAY_HEIGHT; j++) {
       Tshape tmp_shape = getMatrixShapeAtPos (matrix, i, j);
       wattron (win_matrix, COLOR_PAIR(getColorFromShape (tmp_shape)));
       translateCoordinates (i, j, 0, MATRIX_WINDOW_HEIGHT-1, &real_x, &real_y);
       showMinoAtTerminalCoords (win_matrix, real_x, real_y);
-      // wrefresh (win_matrix);
       wattroff (win_matrix, COLOR_PAIR(getColorFromShape (tmp_shape)));
     }
   }
 }
 
 static void showBoard (Tboard *board) {
+  // Global function to display all the board components
   showMatrix (getBoardMatrix (board));
   showActiveTetrimino (getBoardActiveTetrimino (board));
   showHold (getBoardHoldPiece (board));
@@ -210,12 +229,14 @@ static void showBoard (Tboard *board) {
 // Input
 
 static void initInput () {
+  // Initialises the input system
   noecho ();
   cbreak();
   nodelay(stdscr, TRUE);
   keypad(stdscr, TRUE);
 }
 static Tmovement getInput () {
+  // Gets input from the player
   Tmovement input = createMovementWord();
   char ch;
 
@@ -233,11 +254,14 @@ static Tmovement getInput () {
 
   return input;
 }
-static void endInput() {}
+static void endInput() {
+  // Function to end the input system
+}
 
 // Interface struct consructors
 
 Tinterface_out getTerminalInterfaceOut () {
+  // Construct the terminal interface output structure
   Tinterface_out IO_out;
 
   IO_out.initDisplayFunc = initDisplay;
@@ -251,6 +275,7 @@ Tinterface_out getTerminalInterfaceOut () {
 }
 
 Tinterface_in getTerminalInterfaceIn () {
+  // Construct the terminal interface input structure
   Tinterface_in IO_in;
 
   IO_in.initInputFunc = initInput;
