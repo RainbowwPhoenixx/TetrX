@@ -44,10 +44,10 @@ void playSingleplayer (Tinterface_in IO_in, Tinterface_out IO_out) {
       applyInput (&b, mv);
       IO_out.showBoardFunc (&b);
       IO_out.updateScreenFunc ();
+      usleep(16666); // ~60fps
     } while(!getBoardShouldEndTurnStatus (&b));
 
     endTurn(&b);
-    usleep(16666); // ~60fps
   }
 
   endGame(IO_in, IO_out);
