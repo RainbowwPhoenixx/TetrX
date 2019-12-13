@@ -24,3 +24,8 @@ Switching to C is also an opportunity to :
 - Create a graphical interface
 - Rip out the ncurses input system and replace it with SDL
 - Make a versus mode
+- Implement gravity
+- Implement lock delay
+- Implement DAS
+- Implement T-spin detection
+- Implement scoring
