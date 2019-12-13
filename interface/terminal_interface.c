@@ -82,10 +82,11 @@ static void resetScreen () {
 }
 static void updateScreen() {
   // Refreshes all of the surfaces
-  refresh();
-  wrefresh (win_matrix);
-  wrefresh (win_next);
-  wrefresh (win_hold);
+  wnoutrefresh (stdscr);
+  wnoutrefresh (win_matrix);
+  wnoutrefresh (win_next);
+  wnoutrefresh (win_hold);
+  doupdate();
 }
 static void endDisplay () {
   // Does all of the necessary operations to close the display
