@@ -1,16 +1,17 @@
 #include "singleplayer_mode.h"
+#include "../bot/bot.h"
 
-static void initGame (Tinterface_in IO_in, Tinterface_out IO_out) {
+Tbot bot;
+
+static void initGame (Tinterface_in IO_in, Tinterface_out IO_out, Tboard b) {
   // Initialise the game
   IO_out.initDisplayFunc();
   IO_out.displaySkinFunc();
-  IO_in.initInputFunc();
-
-  initRandom ();
+  IO_in.initInputFunc(&bot, b);
 }
 static void endGame (Tinterface_in IO_in, Tinterface_out IO_out) {
   // Function to run right before the game ends
-  IO_in.endInputFunc();
+  IO_in.endInputFunc(&bot);
   IO_out.endDisplayFunc ();
 }
 
@@ -34,13 +35,14 @@ static void endTurn (Tboard *b) {
 void playSingleplayer (Tinterface_in IO_in, Tinterface_out IO_out) {
   // Play out a game of singleplayer tetris
 
-  initGame(IO_in, IO_out);
+  initRandom ();
   Tboard b = createBoard ();
+  initGame(IO_in, IO_out, b);
 
   while (!getBoardHasLostStatus (&b)) {
     beginTurn(&b);
     do {
-      Tmovement mv = IO_in.getInputFunc();
+      Tmovement mv = IO_in.getInputFunc(&bot);
       applyInput (&b, mv);
       IO_out.showBoardFunc (&b);
       IO_out.updateScreenFunc ();
