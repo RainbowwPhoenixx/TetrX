@@ -17,10 +17,13 @@ Tmovement popMoveFromQueue (Tmove_queue *queue) {
     return 0;
   } else {
     queue->size--;
-    return queue->moves[queue->head++];
+    Tmovement res = queue->moves[queue->head];
+    queue->head = (queue->head + 1) % MAX_MOVES;
+    return res;
   }
 }
 void addMovementToQueue (Tmove_queue *queue, Tmovement move) {
   queue->size++;
-  queue->moves[++queue->tail] = move;
+  queue->tail = (queue->tail + 1) % MAX_MOVES;
+  queue->moves[queue->tail] = move;
 }
