@@ -285,11 +285,13 @@ static void endBot (Tbot *bot) {
   bot->should_end_bot_flag = true;
   // pthread_join (bot->thread_id, &status); // If thread terminates before calling this, segfault
 }
+static void nop () {}
 Tinterface_in getBotInterface () {
   Tinterface_in bot_IO;
   bot_IO.initInputFunc = startBot;
   bot_IO.getInputFunc = getBotMovement;
   bot_IO.endInputFunc = endBot;
+  bot_IO.addNewBagFunc = nop;
 
   return bot_IO;
 }

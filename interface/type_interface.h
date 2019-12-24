@@ -26,11 +26,13 @@ typedef struct {
 typedef void (*TinitInput)();
 typedef Tmovement (*TgetInput)();
 typedef void (*TendInput)();
+typedef void (*TaddNewBag)(); // This is bot-specific, and used to give the new next pieces to the bot.
 
 typedef struct {
   TinitInput initInputFunc;
   TgetInput getInputFunc;
   TendInput endInputFunc;
+  TaddNewBag addNewBagFunc;
 } Tinterface_in;
 
 #endif

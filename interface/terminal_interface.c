@@ -258,6 +258,7 @@ static Tmovement getInput () {
 static void endInput() {
   // Function to end the input system
 }
+static void nop () {}
 
 // Interface struct consructors
 
@@ -282,6 +283,7 @@ Tinterface_in getTerminalInterfaceIn () {
   IO_in.initInputFunc = initInput;
   IO_in.getInputFunc = getInput;
   IO_in.endInputFunc = endInput;
+  IO_in.addNewBagFunc = nop;
 
   return IO_in;
 }
