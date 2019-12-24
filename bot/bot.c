@@ -101,7 +101,7 @@ static float computeAvrgHeight (Tboard *board) {
 
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
     Tcoordinate j = C_MATRIX_HEIGHT-1;
-    while (j > 0 && isMinoAtPosEmpty(getBoardMatrix (board), i, j)) {
+    while (j > -1 && isMinoAtPosEmpty(getBoardMatrix (board), i, j)) {
       j--;
     }
     height_sum += j+1;
@@ -114,10 +114,10 @@ static float computeMaxHeight (Tboard *board) {
 
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
     Tcoordinate j = C_MATRIX_HEIGHT-1;
-    while (j > 0 && isMinoAtPosEmpty(getBoardMatrix (board), i, j)) {
+    while (j > -1 && isMinoAtPosEmpty(getBoardMatrix (board), i, j)) {
       j--;
     }
-    max_height = (j>max_height)?(j):(max_height);
+    max_height = (j+1>max_height)?(j+1):(max_height);
   }
 
   return (float) max_height;
