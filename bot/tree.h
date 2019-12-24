@@ -18,11 +18,15 @@ typedef struct _Tnode {
   Tmovement moves[MAX_MOVEMENTS];
   float board_value;
 
-  short nb_of_children;
-  struct _Tnode** children;
+  unsigned short nb_of_children;
+  struct _Tnode* children[100];
+
+  bool are_children_generated;
+  unsigned short child_id;
+  // Pointer to parent, bool is_root
 } Tnode;
 
-// Accesors
+// Accessors
 Tboard *getNodeBoard (Tnode *node);
 void setNodeBoard (Tnode *node, Tboard new_board);
 
@@ -35,11 +39,17 @@ void setNodeIthMove (Tnode *node, Tbyte i, Tmovement new_move);
 float getNodeBoardValue (Tnode *node);
 void setNodeBoardValue (Tnode *node, float new_val);
 
-short getNodeNbOfChildren (Tnode *node);
-void setNodeNbOfChildren (Tnode *node, short new_nb_of_children);
+unsigned short getNodeNbOfChildren (Tnode *node);
+void setNodeNbOfChildren (Tnode *node, unsigned short new_nb_of_children);
 
-Tnode *getNodeIthChild (Tnode *node, short i);
-void setNodeIthChild (Tnode *node, short i, Tnode *new_child);
+Tnode *getNodeIthChild (Tnode *node, unsigned short i);
+void setNodeIthChild (Tnode *node, unsigned short i, Tnode *new_child);
+
+bool getNodeAreChildrenGenerated (Tnode *node);
+void setNodeAreChildrenGenerated (Tnode *node, bool new_val);
+
+unsigned short getNodeChildID (Tnode *node);
+void setNodeChildID (Tnode *node, unsigned short new_val);
 
 // Constructor & destructor
 Tnode *createNode (Tboard board, Tbyte nb_of_moves, Tmovement *moves);

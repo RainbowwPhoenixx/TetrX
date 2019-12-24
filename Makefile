@@ -10,11 +10,11 @@ linking_flags = -lncurses -lpthread
 all_tetris_engine_debug_targets = $(object_dir)general_library_debug.o $(object_dir)type_shape_debug.o $(object_dir)type_movement_debug.o $(object_dir)type_mino_debug.o $(object_dir)type_next_queue_debug.o $(object_dir)type_matrix_debug.o $(object_dir)type_tetrimino_debug.o $(object_dir)type_board_debug.o $(object_dir)board_operations_debug.o
 all_interface_debug_targets = $(object_dir)terminal_interface_debug.o
 all_gamemodes_debug_targets = $(object_dir)singleplayer_mode_debug.o
-all_bot_debug_targets = $(object_dir)tree_debug.o $(object_dir)bot_debug.o
+all_bot_debug_targets = $(object_dir)tree_debug.o $(object_dir)move_queue_debug.o $(object_dir)bot_debug.o
 all_tetris_engine_targets = $(object_dir)general_library.o $(object_dir)type_shape.o $(object_dir)type_movement.o $(object_dir)type_mino.o $(object_dir)type_next_queue.o $(object_dir)type_matrix.o $(object_dir)type_tetrimino.o $(object_dir)type_board.o $(object_dir)board_operations.o
 all_interface_targets = $(object_dir)terminal_interface.o
 all_gamemodes_targets = $(object_dir)singleplayer_mode.o
-all_bot_targets = $(object_dir)tree.o $(object_dir)bot.o
+all_bot_targets = $(object_dir)tree.o $(object_dir)move_queue.o $(object_dir)bot.o
 
 
 .PHONY: tetris_engine interface gamemodes bot clean#Declare the targets that don't correspond to files
