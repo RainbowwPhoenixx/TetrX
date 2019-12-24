@@ -5,6 +5,6 @@
 #include "../interface/terminal_interface.h"
 #include <unistd.h>
 
-void playSingleplayer (Tinterface_in IO_in, Tinterface_out IO_out);
+void playSingleplayer ();
 
 #endif /* end of include guard: __SINGLEPLAYER_MODE_H__ */

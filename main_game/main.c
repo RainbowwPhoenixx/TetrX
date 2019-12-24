@@ -4,6 +4,9 @@
 #include "singleplayer_mode.h"
 #include <stdio.h>
 
+Tinterface_out IO_out;
+Tinterface_in IO_in;
+
 int getGamemode () {
   int choix = 0;
 
@@ -34,10 +37,9 @@ int getPlayerType (char *question) {
 
 int main(int argc, char const *argv[]) {
 
-  Tinterface_out IO_out = getTerminalInterfaceOut ();
+  IO_out = getTerminalInterfaceOut ();
   switch (getGamemode()) {
     case 1: ;
-      Tinterface_in IO_in;
       switch (getPlayerType ("Please enter the player type")) {
         case 1: ;
           IO_in = getTerminalInterfaceIn ();
@@ -47,7 +49,7 @@ int main(int argc, char const *argv[]) {
         break;
       }
 
-      playSingleplayer(IO_in, IO_out);
+      playSingleplayer();
     break;
   }
 
