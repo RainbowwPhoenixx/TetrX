@@ -3,6 +3,7 @@
 
 #include "../tetris_engine/tetris_engine.h"
 #include "../interface/type_interface.h"
+#include "bot_types.h"
 #include <stdlib.h>
 
 // Definition of the search tree used by the bot
@@ -13,7 +14,7 @@ typedef struct _Tnode {
   // in its final place, as well as the sequence of movements to get
   // it there. It also contains the score for this board given
   // by the evaluation function.
-  Tboard board;
+  Tbot_board board;
   Tbyte nb_of_moves;
   Tmovement moves[MAX_MOVEMENTS];
   float board_value;
@@ -27,8 +28,8 @@ typedef struct _Tnode {
 } Tnode;
 
 // Accessors
-Tboard *getNodeBoard (Tnode *node);
-void setNodeBoard (Tnode *node, Tboard new_board);
+Tbot_board *getNodeBotBoard (Tnode *node);
+void setNodeBotBoard (Tnode *node, Tbot_board new_board);
 
 Tbyte getNodeNbOfMoves (Tnode *node);
 void setNodeNbOfMoves (Tnode *node, Tbyte new_nb_of_moves);
@@ -52,7 +53,7 @@ unsigned short getNodeChildID (Tnode *node);
 void setNodeChildID (Tnode *node, unsigned short new_val);
 
 // Constructor & destructor
-Tnode *createNode (Tboard board, Tbyte nb_of_moves, Tmovement *moves);
+Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves);
 void freeNode (Tnode *tree);
 
 #endif /* end of include guard: __TREE_H__ */

@@ -96,12 +96,12 @@ void setShouldEndBotFlag (Tbot *bot, bool new_flag) {
 // }
 
 
-static float computeAvrgHeight (Tboard *board) {
+static float computeAvrgHeight (Tbot_board *board) {
   int height_sum = 0;
 
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
     Tcoordinate j = C_MATRIX_HEIGHT-1;
-    while (j > -1 && isMinoAtPosEmpty(getBoardMatrix (board), i, j)) {
+    while (j > -1 && isMinoAtPosEmpty(getBotBoardMatrix (board), i, j)) {
       j--;
     }
     height_sum += j+1;
@@ -109,12 +109,12 @@ static float computeAvrgHeight (Tboard *board) {
 
   return ((float) height_sum)/C_MATRIX_WIDTH;
 }
-static float computeMaxHeight (Tboard *board) {
+static float computeMaxHeight (Tbot_board *board) {
   int max_height = 0;
 
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
     Tcoordinate j = C_MATRIX_HEIGHT-1;
-    while (j > -1 && isMinoAtPosEmpty(getBoardMatrix (board), i, j)) {
+    while (j > -1 && isMinoAtPosEmpty(getBotBoardMatrix (board), i, j)) {
       j--;
     }
     max_height = (j+1>max_height)?(j+1):(max_height);
@@ -122,10 +122,10 @@ static float computeMaxHeight (Tboard *board) {
 
   return (float) max_height;
 }
-static float evaluateBoard (Tboard *board) {
+static float evaluateBoard (Tbot_board *board) {
   return 1/computeMaxHeight (board);
 }
-static Tnode *expandNode (Tbot *bot, Tnode *node) {
+static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
   // Generate the possible moves from the given node, and assign them a score
   // Return the best generated node
   // Returns NULL if children were already generated
@@ -140,41 +140,46 @@ static Tnode *expandNode (Tbot *bot, Tnode *node) {
   Tmovement moves[15];
   Tbyte nb_of_moves = 0;
 
-  for (int i = -4; i < 6; i++) {
-    nb_of_moves = 0;
-    if (i<0) {
-      for (Tbyte j = 0; j < -i; j++) {
-        moves[nb_of_moves] = MV_LEFT;
+  for (Tbyte rot = 0; rot < 4; rot++) {
+    for (int i = -4; i < 6; i++) {
+      nb_of_moves = 0;
+      for (size_t j = 0; j < rot; j++) {
+        moves[nb_of_moves] = MV_CW;
         nb_of_moves++;
       }
-    } else if (i>0) {
-      for (Tbyte j = 0; j < i; j++) {
-        moves[nb_of_moves] = MV_RIGHT;
-        nb_of_moves++;
+      if (i<0) {
+        for (Tbyte j = 0; j < -i; j++) {
+          moves[nb_of_moves] = MV_LEFT;
+          nb_of_moves++;
+        }
+      } else if (i>0) {
+        for (Tbyte j = 0; j < i; j++) {
+          moves[nb_of_moves] = MV_RIGHT;
+          nb_of_moves++;
+        }
       }
-    }
-    moves[nb_of_moves] = MV_HD;
-    nb_of_moves++;
+      moves[nb_of_moves] = MV_HD;
+      nb_of_moves++;
 
-    Tboard new_board;
-    copyBoard (&new_board, getNodeBoard (node));
-    popTetriminoFromQueue (&new_board);
-    for (Tbyte j = 0; j < nb_of_moves; j++) {
-      applyInput (&new_board, moves[j]);
-    }
+      Tbot_board new_board;
+      copyBotBoard (&new_board, getNodeBotBoard (node));
+      botPopTetriminoFromQueue (&new_board, next_queue);
+      for (Tbyte j = 0; j < nb_of_moves; j++) {
+        botApplyInput (&new_board, next_queue, moves[j]);
+      }
 
-    lockActiveTetrimino (&new_board);
-    clearLines (&new_board);
-    setBoardHasHeldThisTurnStatus (&new_board, false);
+      botLockActiveTetrimino (&new_board);
+      botClearLines (&new_board);
 
-    Tnode *new_node = createNode (new_board, nb_of_moves, moves);
-    setNodeIthChild (node, getNodeNbOfChildren (node), new_node);
-    setNodeNbOfChildren (node, getNodeNbOfChildren (node)+1);
-    float board_score = evaluateBoard (&new_board);
-    setNodeBoardValue (new_node, board_score);
-    if (board_score > best_score) {
-      best_score = board_score;
-      best_node = new_node;
+      Tnode *new_node = createNode (new_board, nb_of_moves, moves);
+      setNodeIthChild (node, getNodeNbOfChildren (node), new_node);
+      setNodeNbOfChildren (node, getNodeNbOfChildren (node)+1);
+      float board_score = evaluateBoard (&new_board);
+      setNodeBoardValue (new_node, board_score);
+      if (board_score > best_score) {
+        best_score = board_score;
+        best_node = new_node;
+      }
     }
   }
 
@@ -184,7 +189,9 @@ static Tnode *expandNode (Tbot *bot, Tnode *node) {
 // Thinking function
 static void *bot_TetrX (void *_bot) {
   Tbot *bot = (Tbot*) _bot;
-  Tnode *search_tree = createNode (bot->master_board, 0, NULL);
+  Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL);
+  Tnext_queue global_next_queue;
+  copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
   Tnode *best_node = NULL;
 
   while (!getShouldEndBotFlag (bot)) {
@@ -213,7 +220,7 @@ static void *bot_TetrX (void *_bot) {
     }
 
     // Do the thinking
-    Tnode *best_node_candidate = expandNode (bot, search_tree);
+    Tnode *best_node_candidate = expandNode (bot, search_tree, &global_next_queue);
     if (best_node_candidate != NULL) {
       best_node = best_node_candidate;
     }

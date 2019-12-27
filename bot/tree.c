@@ -1,10 +1,10 @@
 #include "tree.h"
 
 // Accessors
-Tboard *getNodeBoard (Tnode *node) {
+Tbot_board *getNodeBotBoard (Tnode *node) {
   return &(node->board);
 }
-void setNodeBoard (Tnode *node, Tboard new_board) {
+void setNodeBotBoard (Tnode *node, Tbot_board new_board) {
   node->board = new_board;
 }
 
@@ -61,10 +61,10 @@ void setNodeChildID (Tnode *node, unsigned short new_val){
 }
 
 
-Tnode *createNode (Tboard board, Tbyte nb_of_moves, Tmovement *moves) {
+Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves) {
   Tnode *tree = calloc (1, sizeof(Tnode));
 
-  setNodeBoard (tree, board);
+  setNodeBotBoard (tree, board);
   setNodeNbOfMoves (tree, nb_of_moves);
   setNodeAreChildrenGenerated (tree, false);
   setNodeNbOfChildren (tree, 0);
