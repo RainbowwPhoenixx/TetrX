@@ -130,7 +130,7 @@ static float computeMaxHeight (Tbot_board *board) {
   return (float) max_height;
 }
 static float evaluateBoard (Tbot_board *board) {
-  return 1/computeMaxHeight (board);
+  return 1/(computeMaxHeight (board) + computeAvrgHeight (board));
 }
 static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
   // Generate the possible moves from the given node, and assign them a score
