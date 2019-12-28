@@ -99,7 +99,7 @@ static void endDisplay () {
 }
 static void displaySkin () {
   // Get the skin from the skin file and display it on stdscr
-  FILE *fp = fopen("/home/antoine/Documents/Coding/C/TetrX/res/terminal_skin", "r");
+  FILE *fp = fopen("res/terminal_skin", "r");
   char line[MAX_CHAR_SKIN_WIDTH];
   Tbyte i = 0;
   while (fgets(line, MAX_CHAR_SKIN_WIDTH, fp) != NULL) {
