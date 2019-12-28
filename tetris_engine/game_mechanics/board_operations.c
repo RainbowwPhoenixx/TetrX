@@ -115,7 +115,7 @@ void popTetriminoFromQueue (Tboard *b) {
   advanceNextQueue (next_queue);
 
   if (getNextQueueLength (next_queue) < MINIMUM_QUEUE_LENGTH) {
-    addBagToNextQueue (next_queue);
+    addBagToNextQueue (next_queue, true);
   }
 }
 

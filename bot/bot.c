@@ -95,6 +95,13 @@ void setShouldEndBotFlag (Tbot *bot, bool new_flag) {
 //   pthread_mutex_unlock (&(bot->should_end_bot_mutex));
 // }
 
+bool getNewPiecesReadyFlag (Tbot *bot) {
+  return bot->new_pieces_ready_flag;
+}
+void setNewPiecesReadyFlag (Tbot *bot, bool new_flag) {
+  bot->new_pieces_ready_flag = new_flag;
+}
+
 
 static float computeAvrgHeight (Tbot_board *board) {
   int height_sum = 0;
@@ -190,13 +197,13 @@ static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
 static void *bot_TetrX (void *_bot) {
   Tbot *bot = (Tbot*) _bot;
   Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL);
-  Tnext_queue global_next_queue;
+  Tnext_queue global_next_queue = createNextQueue ();
   copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
   Tnode *best_node = NULL;
 
   while (!getShouldEndBotFlag (bot)) {
     // Check all the flags
-    if (getShouldOutputPieceFlag (bot) && best_node) {
+    if (getShouldOutputPieceFlag (bot) && best_node  && !getNewPiecesReadyFlag (bot)) {
       // Output the moves of the next piece of the best path found
       for (Tbyte i = 0; i < best_node->nb_of_moves; i++) {
         bot->next_moves[i] = best_node->moves[i];
@@ -211,6 +218,8 @@ static void *bot_TetrX (void *_bot) {
       freeNode (search_tree);
       search_tree = best_node;
       best_node = NULL;
+      advanceNextQueue (&global_next_queue);
+      setBotBoardNextQueueOffset (getNodeBotBoard (search_tree), getBotBoardNextQueueOffset (getNodeBotBoard (search_tree))-1);
     }
     if (getShouldResetSearchFlag (bot)) {
       // Free the current search tree
@@ -218,11 +227,21 @@ static void *bot_TetrX (void *_bot) {
       // Regenerate the first node
       // Reset the flag
     }
+    if (getNewPiecesReadyFlag (bot)) {
+      Tbyte queue_length = getNextQueueLength (&bot->new_pieces);
+      for (Tbyte i = 0; i < queue_length; i++) {
+        addPieceToNextQueue (&global_next_queue, getIthNextPiece (&bot->new_pieces, 0));
+        advanceNextQueue (&bot->new_pieces);
+      }
+      setNewPiecesReadyFlag (bot, false);
+    }
 
     // Do the thinking
     Tnode *best_node_candidate = expandNode (bot, search_tree, &global_next_queue);
     if (best_node_candidate != NULL) {
       best_node = best_node_candidate;
+    } else {
+      usleep (1000);
     }
 
     // Generate the moves, compute their value, and put them in the queue
@@ -242,6 +261,7 @@ static void startBot (Tbot *bot, Tboard board) {
   bot->output_piece_ready_flag = false;
   bot->should_reset_search_flag = false;
   bot->should_end_bot_flag = false;
+  bot->new_pieces_ready_flag = false;
 
   // Init the mutexes
   // pthread_mutexattr_t attr;
@@ -264,9 +284,9 @@ static Tmovement getBotMovement (Tbot *bot) {
 
   if (getQueueSize (&next_moves) == 0) {
     // Ask the bot to prepare the input
-    if (!getShouldOutputPieceFlag (bot)) {
-      setShouldOutputPieceFlag (bot, true);
-    }
+    // if (!getShouldOutputPieceFlag (bot)) {
+      // setShouldOutputPieceFlag (bot, true);
+    // }
 
     // When input is prepared, get it & reset flag
     if (getOutputPieceReadyFlag(bot)) {
@@ -275,6 +295,8 @@ static Tmovement getBotMovement (Tbot *bot) {
       }
       bot->next_moves_length = 0;
       setOutputPieceReadyFlag (bot, false);
+    } else if (!getShouldOutputPieceFlag (bot)) {
+      setShouldOutputPieceFlag (bot, true);
     }
   }
 
@@ -292,13 +314,27 @@ static void endBot (Tbot *bot) {
   bot->should_end_bot_flag = true;
   // pthread_join (bot->thread_id, &status); // If thread terminates before calling this, segfault
 }
-static void nop () {}
+static void addBagToBot (Tbot *bot, Tshape *new_bag) {
+  static Tnext_queue next_queue_buffer;
+  for (Tbyte i = 0; i < 7; i++) {
+    addPieceToNextQueue (&next_queue_buffer, new_bag[i]);
+  }
+
+  if (!getNewPiecesReadyFlag (bot)) {
+    Tbyte buffer_length = getNextQueueLength (&next_queue_buffer);
+    for (Tbyte i = 0; i < buffer_length; i++) {
+      addPieceToNextQueue (&bot->new_pieces, getIthNextPiece (&next_queue_buffer, 0));
+      advanceNextQueue (&next_queue_buffer);
+    }
+    setNewPiecesReadyFlag (bot, true);
+  }
+}
 Tinterface_in getBotInterface () {
   Tinterface_in bot_IO;
   bot_IO.initInputFunc = startBot;
   bot_IO.getInputFunc = getBotMovement;
   bot_IO.endInputFunc = endBot;
-  bot_IO.addNewBagFunc = nop;
+  bot_IO.addNewBagFunc = addBagToBot;
 
   return bot_IO;
 }

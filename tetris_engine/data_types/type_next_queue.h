@@ -3,6 +3,7 @@
 
 #include "general_library.h"
 #include "type_shape.h"
+#include <stdbool.h>
 
 typedef struct {
   Tshape queue[C_QUEUE_LENGTH];
@@ -18,7 +19,8 @@ void setNextQueueLength (Tnext_queue *next_queue, Tbyte new_length);
 
 // Useful functions
 void advanceNextQueue (Tnext_queue *next_queue);
-void addBagToNextQueue (Tnext_queue *next_queue);
+void addPieceToNextQueue (Tnext_queue *next_queue, Tshape piece);
+void addBagToNextQueue (Tnext_queue *next_queue, bool should_signal_new_pieces);
 
 // Constructor
 Tnext_queue createNextQueue ();

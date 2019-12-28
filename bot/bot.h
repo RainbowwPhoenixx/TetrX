@@ -16,6 +16,7 @@ typedef struct {
   volatile bool output_piece_ready_flag;
   volatile bool should_reset_search_flag;
   volatile bool should_end_bot_flag;
+  volatile bool new_pieces_ready_flag;
 
   // Mutexes to protect the above flags
   // pthread_mutex_t should_output_piece_mutex;
@@ -25,6 +26,8 @@ typedef struct {
 
   Tmovement next_moves[15];
   Tbyte next_moves_length;
+
+  Tnext_queue new_pieces;
 
   Tboard master_board;
   Tbyte max_previews;

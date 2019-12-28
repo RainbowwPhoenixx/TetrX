@@ -1,4 +1,9 @@
 #include "type_next_queue.h"
+#include "../../interface/type_interface.h"
+#include "../../bot/bot.h"
+
+extern Tinterface_in IO_in;
+extern Tbot bot;
 
 // Accessors
 Tshape getIthNextPiece(Tnext_queue *next_queue, Tbyte i) {
@@ -27,25 +32,34 @@ void advanceNextQueue (Tnext_queue *next_queue) {
   setNextQueueLength (next_queue, getNextQueueLength (next_queue)-1);
 }
 
-static void addPieceToNextQueue (Tnext_queue *next_queue, Tshape piece) {
+void addPieceToNextQueue (Tnext_queue *next_queue, Tshape piece) {
   // Set the piece
   setIthNextPiece (next_queue, getNextQueueLength(next_queue), piece);
   // Up the queue length
   setNextQueueLength (next_queue, getNextQueueLength (next_queue)+1);
 }
-void addBagToNextQueue (Tnext_queue *next_queue) {
+void addBagToNextQueue (Tnext_queue *next_queue, bool should_signal_new_pieces) {
   // Adds a 7 bag to the end of the queue
   Tshape bag[] = {L, J, S, Z, O, I, T};
+  Tshape scrambled_bag[7];
 
+  // Scramble the bag
   for (Tbyte i = 7; i > 0; i--) {
     // Get a random piece form the list
     Tbyte choice = getRandomInteger (i);
-    // Put it into the queue
-    addPieceToNextQueue (next_queue, bag[choice]);
+    // Put it into the scrambled_bag
+    scrambled_bag[7-i] = bag[choice];
     // Take it out of the array
     for (Tbyte j = choice; j < i-1; j++) {
       bag[j] = bag[j+1];
     }
+  }
+
+  for (Tbyte i = 0; i < 7; i++) {
+    addPieceToNextQueue (next_queue, scrambled_bag[i]);
+  }
+  if (should_signal_new_pieces) {
+    IO_in.addNewBagFunc (&bot, scrambled_bag);
   }
 }
 
@@ -57,8 +71,8 @@ Tnext_queue createNextQueue () {
   setNextQueueLength (&next_queue, 0);
 
   // Add two bags to the queue
-  addBagToNextQueue (&next_queue);
-  addBagToNextQueue (&next_queue);
+  addBagToNextQueue (&next_queue, false);
+  addBagToNextQueue (&next_queue, false);
 
   return next_queue;
 }
