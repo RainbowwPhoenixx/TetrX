@@ -1,6 +1,7 @@
 #include <ncurses.h>
 #include "terminal_interface.h"
 #include "../tetris_engine/tetris_engine.h"
+#include <unistd.h>
 
 // Definition of the color IDs for each of the shapes
 #define COL_L 1
@@ -35,6 +36,12 @@
 #define HOLD_WINDOW_Y 1
 #define HOLD_WINDOW_HEIGHT 2
 #define HOLD_WINDOW_WIDTH 10
+
+// Definition of the duration of a frame (in microseconds)
+#define FRAME_DURATION 16666
+// Definition of the different delays (in # of frames)
+#define LINE_CLEAR_DELAY 0
+#define ENTRY_DELAY 0
 
 const char mino_skin[] = "  ";
 
@@ -87,6 +94,7 @@ static void updateScreen() {
   wnoutrefresh (win_next);
   wnoutrefresh (win_hold);
   doupdate();
+  usleep(FRAME_DURATION);
 }
 static void endDisplay () {
   // Does all of the necessary operations to close the display

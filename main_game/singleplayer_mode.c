@@ -48,7 +48,6 @@ void playSingleplayer () {
       applyInput (&b, mv);
       IO_out.showBoardFunc (&b);
       IO_out.updateScreenFunc ();
-      usleep(16666); // ~60fps
     } while(!getBoardShouldEndTurnStatus (&b));
 
     endTurn(&b);
