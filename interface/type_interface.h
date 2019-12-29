@@ -12,6 +12,7 @@ typedef void (*TresetScreen)();
 typedef void (*TupdateScreen)();
 typedef void (*TendDisplay)();
 typedef void (*TshowBoard)(Tboard*);
+typedef void (*TlineClearAnimation)();
 
 typedef struct {
   TinitDisplay initDisplayFunc;
@@ -20,6 +21,7 @@ typedef struct {
   TupdateScreen updateScreenFunc;
   TendDisplay endDisplayFunc;
   TshowBoard showBoardFunc;
+  TlineClearAnimation lineClearAnimationFunc;
 } Tinterface_out;
 
 // Types for the input functions

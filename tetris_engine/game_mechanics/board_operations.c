@@ -1,4 +1,5 @@
 #include "board_operations.h"
+#include "../../interface/type_interface.h"
 
 #define MINIMUM_QUEUE_LENGTH 8
 #define MAXIMUM_AUTHORIZED_HEIGHT 20
@@ -16,6 +17,8 @@ static Tcoordinate_diff I_kicks[4][5][2] = {
   {{ 0,  0}, { 2,  0}, {-1,  0}, { 2,  1}, {-1, -2}},
   {{ 0,  0}, { 1,  0}, {-2,  0}, { 1, -2}, {-2,  1}}
 };
+
+extern Tinterface_out IO_out;
 
 bool isBoardStateValid (Tboard *b) {
   // Checks that the position of the active tetrimino is valid in relation to the matrix.
@@ -100,6 +103,7 @@ void clearLines (Tboard *b) {
 
   // Add the cleared lines to the line counter
   setBoardLinesCleared (b, getBoardLinesCleared (b) + number_of_lines_to_clear);
+  IO_out.lineClearAnimationFunc (lines_to_clear, number_of_lines_to_clear);
 }
 void lockActiveTetrimino (Tboard *b) {
   Ttetrimino *t = getBoardActiveTetrimino (b);

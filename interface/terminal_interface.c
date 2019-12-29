@@ -45,7 +45,7 @@
 // Definition of the duration of a frame (in microseconds)
 #define FRAME_DURATION 16666
 // Definition of the different delays (in # of frames)
-#define LINE_CLEAR_DELAY 0
+#define LINE_CLEAR_DELAY 10 //MUST BE BETWEEN 0 AND 10
 #define ENTRY_DELAY 0
 
 const char mino_skin[] = "  ";
@@ -238,6 +238,18 @@ static void showLinesCleared (Tline_counter lines) {
   wmove (win_lines, 0, 0);
   wprintw (win_lines, "%d", lines);
 }
+static void lineClearAnimation (Tcoordinate *lines, Tbyte number_of_lines) {
+  Tcoordinate real_x, real_y;
+  wattron (win_matrix, COLOR_PAIR(getColorFromShape (EMPTY)));
+  for (Tbyte i = 0; i < LINE_CLEAR_DELAY; i++) {
+    for (Tbyte j = 0; j < number_of_lines; j++) {
+      translateCoordinates (i, lines[j], 0, MATRIX_WINDOW_HEIGHT-1, &real_x, &real_y);
+      showMinoAtTerminalCoords (win_matrix ,real_x, real_y);
+    }
+    updateScreen ();
+  }
+  wattroff (win_matrix, COLOR_PAIR(getColorFromShape (EMPTY)));
+}
 
 static void showBoard (Tboard *board) {
   // Global function to display all the board components
@@ -293,6 +305,7 @@ Tinterface_out getTerminalInterfaceOut () {
   IO_out.updateScreenFunc = updateScreen;
   IO_out.endDisplayFunc = endDisplay;
   IO_out.showBoardFunc = showBoard;
+  IO_out.lineClearAnimationFunc = lineClearAnimation;
 
   return IO_out;
 }
