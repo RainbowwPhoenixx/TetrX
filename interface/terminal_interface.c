@@ -37,6 +37,11 @@
 #define HOLD_WINDOW_HEIGHT 2
 #define HOLD_WINDOW_WIDTH 10
 
+#define LINES_WINDOW_X 1
+#define LINES_WINDOW_Y 10
+#define LINES_WINDOW_HEIGHT 1
+#define LINES_WINDOW_WIDTH 10
+
 // Definition of the duration of a frame (in microseconds)
 #define FRAME_DURATION 16666
 // Definition of the different delays (in # of frames)
@@ -82,6 +87,7 @@ static void initDisplay () {
   win_matrix = newwin (MATRIX_WINDOW_HEIGHT, MATRIX_WINDOW_WIDTH, MATRIX_WINDOW_Y, MATRIX_WINDOW_X);
   win_next = newwin (NEXT_WINDOW_HEIGHT, NEXT_WINDOW_WIDTH, NEXT_WINDOW_Y, NEXT_WINDOW_X);
   win_hold = newwin (HOLD_WINDOW_HEIGHT, HOLD_WINDOW_WIDTH, HOLD_WINDOW_Y, HOLD_WINDOW_X);
+  win_lines = newwin (LINES_WINDOW_HEIGHT, LINES_WINDOW_WIDTH, LINES_WINDOW_Y, LINES_WINDOW_X);
 }
 static void resetScreen () {
   // Clears the whole terminal
@@ -93,6 +99,7 @@ static void updateScreen() {
   wnoutrefresh (win_matrix);
   wnoutrefresh (win_next);
   wnoutrefresh (win_hold);
+  wnoutrefresh (win_lines);
   doupdate();
   usleep(FRAME_DURATION);
 }
@@ -226,6 +233,11 @@ static void showMatrix (Tmatrix *matrix) {
     }
   }
 }
+static void showLinesCleared (Tline_counter lines) {
+  // wborder (win_lines, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+  wmove (win_lines, 0, 0);
+  wprintw (win_lines, "%d", lines);
+}
 
 static void showBoard (Tboard *board) {
   // Global function to display all the board components
@@ -233,6 +245,7 @@ static void showBoard (Tboard *board) {
   showActiveTetrimino (getBoardActiveTetrimino (board));
   showHold (getBoardHoldPiece (board));
   showNextQueue (getBoardNextQueue (board));
+  showLinesCleared (getBoardLinesCleared (board));
 }
 
 // Input

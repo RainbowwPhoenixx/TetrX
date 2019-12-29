@@ -97,6 +97,9 @@ void clearLines (Tboard *b) {
       }
     }
   }
+
+  // Add the cleared lines to the line counter
+  setBoardLinesCleared (b, getBoardLinesCleared (b) + number_of_lines_to_clear);
 }
 void lockActiveTetrimino (Tboard *b) {
   Ttetrimino *t = getBoardActiveTetrimino (b);
