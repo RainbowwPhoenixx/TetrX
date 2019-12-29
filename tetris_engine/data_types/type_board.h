@@ -9,11 +9,15 @@
 #include "type_next_queue.h"
 #include "type_matrix.h"
 
+typedef unsigned int Tline_counter;
+
 typedef struct {
   Tmatrix matrix;
   Ttetrimino active_tetrimino;
   Tnext_queue next_queue;
   Tshape hold_piece;
+
+  unsigned int lines_cleared;
 
   bool has_held_this_turn, has_lost, should_end_turn;
 } Tboard;
@@ -25,6 +29,9 @@ Tnext_queue *getBoardNextQueue (Tboard *board);
 
 Tshape getBoardHoldPiece (Tboard *board);
 void setBoardHoldPiece (Tboard *board, Tshape new_hold_piece);
+
+Tline_counter getBoardLinesCleared (Tboard *b);
+void setBoardLinesCleared (Tboard *b, Tline_counter lines);
 
 bool getBoardHasHeldThisTurnStatus (Tboard *b);
 void setBoardHasHeldThisTurnStatus (Tboard *b, bool new_state);

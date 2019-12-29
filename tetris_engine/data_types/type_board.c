@@ -29,6 +29,13 @@ void setBoardHoldPiece (Tboard *board, Tshape new_hold_piece) {
   board->hold_piece = new_hold_piece;
 }
 
+Tline_counter getBoardLinesCleared (Tboard *b) {
+  return b->lines_cleared;
+}
+void setBoardLinesCleared (Tboard *b, Tline_counter lines) {
+  b->lines_cleared = lines;
+}
+
 bool getBoardHasHeldThisTurnStatus (Tboard *b) {
   return b->has_held_this_turn;
 }
@@ -59,6 +66,7 @@ Tboard createBoard () {
   setBoardActiveTetrimino (&b, createTetrimino (EMPTY));
   setBoardNextQueue (&b, createNextQueue ());
   setBoardHoldPiece (&b, EMPTY);
+  setBoardLinesCleared (&b, 0);
   setBoardHasLostStatus (&b, false);
   setBoardShouldEndTurnStatus (&b, false);
   setBoardHasHeldThisTurnStatus (&b, false);
@@ -73,6 +81,7 @@ void copyBoard (Tboard *dest, Tboard *src) {
   copyMatrix (getBoardMatrix (dest), getBoardMatrix (src));
   copyTetrimino (getBoardActiveTetrimino (dest), getBoardActiveTetrimino (src));
   setBoardHoldPiece (dest, getBoardHoldPiece (src));
+  setBoardLinesCleared (dest, getBoardLinesCleared (src));
   copyNextQueue (getBoardNextQueue (dest), getBoardNextQueue (src));
   setBoardHasLostStatus (dest, getBoardHasLostStatus(src));
   setBoardShouldEndTurnStatus (dest, getBoardShouldEndTurnStatus (src));
