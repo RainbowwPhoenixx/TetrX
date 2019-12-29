@@ -147,45 +147,51 @@ static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
   Tmovement moves[15];
   Tbyte nb_of_moves = 0;
 
-  for (Tbyte rot = 0; rot < 4; rot++) {
-    for (int i = -4; i < 6; i++) {
-      nb_of_moves = 0;
-      for (size_t j = 0; j < rot; j++) {
-        moves[nb_of_moves] = MV_CW;
+  for (Tbyte hold = 0; hold < 2; hold++) {
+    for (Tbyte rot = 0; rot < 4; rot++) {
+      for (int i = -4; i < 6; i++) {
+        nb_of_moves = 0;
+        if (hold) {
+          moves[nb_of_moves] = MV_HOLD;
+          nb_of_moves++;
+        }
+        for (Tbyte j = 0; j < rot; j++) {
+          moves[nb_of_moves] = MV_CW;
+          nb_of_moves++;
+        }
+        if (i<0) {
+          for (Tbyte j = 0; j < -i; j++) {
+            moves[nb_of_moves] = MV_LEFT;
+            nb_of_moves++;
+          }
+        } else if (i>0) {
+          for (Tbyte j = 0; j < i; j++) {
+            moves[nb_of_moves] = MV_RIGHT;
+            nb_of_moves++;
+          }
+        }
+        moves[nb_of_moves] = MV_HD;
         nb_of_moves++;
-      }
-      if (i<0) {
-        for (Tbyte j = 0; j < -i; j++) {
-          moves[nb_of_moves] = MV_LEFT;
-          nb_of_moves++;
+
+        Tbot_board new_board;
+        copyBotBoard (&new_board, getNodeBotBoard (node));
+        botPopTetriminoFromQueue (&new_board, next_queue);
+        for (Tbyte j = 0; j < nb_of_moves; j++) {
+          botApplyInput (&new_board, next_queue, moves[j]);
         }
-      } else if (i>0) {
-        for (Tbyte j = 0; j < i; j++) {
-          moves[nb_of_moves] = MV_RIGHT;
-          nb_of_moves++;
+
+        botLockActiveTetrimino (&new_board);
+        botClearLines (&new_board);
+
+        Tnode *new_node = createNode (new_board, nb_of_moves, moves);
+        setNodeIthChild (node, getNodeNbOfChildren (node), new_node);
+        setNodeNbOfChildren (node, getNodeNbOfChildren (node)+1);
+        float board_score = evaluateBoard (&new_board);
+        setNodeBoardValue (new_node, board_score);
+        if (board_score > best_score) {
+          best_score = board_score;
+          best_node = new_node;
         }
-      }
-      moves[nb_of_moves] = MV_HD;
-      nb_of_moves++;
-
-      Tbot_board new_board;
-      copyBotBoard (&new_board, getNodeBotBoard (node));
-      botPopTetriminoFromQueue (&new_board, next_queue);
-      for (Tbyte j = 0; j < nb_of_moves; j++) {
-        botApplyInput (&new_board, next_queue, moves[j]);
-      }
-
-      botLockActiveTetrimino (&new_board);
-      botClearLines (&new_board);
-
-      Tnode *new_node = createNode (new_board, nb_of_moves, moves);
-      setNodeIthChild (node, getNodeNbOfChildren (node), new_node);
-      setNodeNbOfChildren (node, getNodeNbOfChildren (node)+1);
-      float board_score = evaluateBoard (&new_board);
-      setNodeBoardValue (new_node, board_score);
-      if (board_score > best_score) {
-        best_score = board_score;
-        best_node = new_node;
       }
     }
   }
