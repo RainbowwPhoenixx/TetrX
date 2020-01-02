@@ -12,7 +12,7 @@ typedef void (*TresetScreen)();
 typedef void (*TupdateScreen)();
 typedef void (*TendDisplay)();
 typedef void (*TshowBoard)(Tboard*);
-typedef void (*TlineClearAnimation)();
+typedef void (*TlineClearAnimation)(Tcoordinate *, Tbyte);
 
 typedef struct {
   TinitDisplay initDisplayFunc;
