@@ -2,6 +2,7 @@
 #include "terminal_interface.h"
 #include "../tetris_engine/tetris_engine.h"
 #include <unistd.h>
+#include <SDL.h>
 
 // Definition of the color IDs for each of the shapes
 #define COL_L 1
@@ -264,25 +265,36 @@ static void showBoard (Tboard *board) {
 
 static void initInput () {
   // Initialises the input system
-  noecho ();
-  cbreak();
-  nodelay(stdscr, TRUE);
-  keypad(stdscr, TRUE);
+  SDL_Init (0);
+  SDL_InitSubSystem (SDL_INIT_VIDEO);
+  SDL_Window *SDLwin = SDL_CreateWindow ("Titre", 0, 0, 10, 10, 0); // Make the window as discreet as possible
 }
 static Tmovement getInput () {
   // Gets input from the player
-  Tmovement input = createMovementWord();
-  char ch;
+  static Tmovement input; // Initialized at 0 because it is static
+  Tmovement tmp_mv;
+  SDL_Keycode key_kc;
+  SDL_Event event;
 
-  while ((ch = getch ()) != ERR) {
-    switch (ch) {
-      case 'q' : addMovementToWord (&input, MV_LEFT); break;
-      case 'd' : addMovementToWord (&input, MV_RIGHT); break;
-      case 'l' : addMovementToWord (&input, MV_CW); break;
-      case 'm' : addMovementToWord (&input, MV_CCW); break;
-      case 's' : addMovementToWord (&input, MV_SD); break;
-      case '*' : addMovementToWord (&input, MV_HD); break;
-      case 'z' : addMovementToWord (&input, MV_HOLD); break;
+  while (SDL_PollEvent(&event)) {
+    if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
+      key_kc = event.key.keysym.sym;
+      switch (key_kc) {
+        case SDLK_q        : tmp_mv = MV_LEFT; break;
+        case SDLK_d        : tmp_mv = MV_RIGHT; break;
+        case SDLK_l        : tmp_mv = MV_CW; break;
+        case SDLK_m        : tmp_mv = MV_CCW; break;
+        case SDLK_s        : tmp_mv = MV_SD; break;
+        case SDLK_ASTERISK : tmp_mv = MV_HD; break;
+        case SDLK_z        : tmp_mv = MV_HOLD; break;
+        default : tmp_mv = createMovementWord (); // Reset if no known key is pressed
+      }
+    }
+    if (event.type == SDL_KEYDOWN && tmp_mv) {
+      addMovementToWord (&input, tmp_mv);
+    }
+    if (event.type == SDL_KEYUP && tmp_mv) {
+      removeMovementFromWord (&input, tmp_mv);
     }
   }
 
@@ -290,6 +302,7 @@ static Tmovement getInput () {
 }
 static void endInput() {
   // Function to end the input system
+  SDL_Quit();
 }
 static void nop () {}
 
