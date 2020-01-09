@@ -20,5 +20,6 @@ typedef short Tmovement;
 Tmovement createMovementWord ();
 void addMovementToWord (Tmovement *mv_word, Tpossible_movement mv);
 bool isMovementInWord (Tmovement *mv_word, Tpossible_movement mv);
+void removeMovementFromWord (Tmovement *mv_word, Tpossible_movement mv);
 
 #endif
