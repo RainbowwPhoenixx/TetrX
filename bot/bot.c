@@ -1,5 +1,4 @@
 #include "bot.h"
-#include "move_queue.h"
 #include <unistd.h>
 
 // Accessors
@@ -200,6 +199,27 @@ static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
 }
 
 // Thinking function
+static void translate_moves (Tmovement *moves, Tbyte *nb_of_moves) {
+  // Translate moves from the bot's thinking to the game's thinking
+
+  // Copy the moves in a temporary list
+  Tmovement tmp_moves[MAX_MOVES];
+  Tbyte tmp_nb_of_moves = *nb_of_moves;
+  for (Tbyte i = 0; i < tmp_nb_of_moves; i++) {
+    tmp_moves[i] = moves [i];
+  }
+
+  // Space out side moves (hypertap, not DAS)
+  *nb_of_moves = 0;
+  for (Tbyte i = 0; i < tmp_nb_of_moves; i++) {
+    moves[*nb_of_moves] = tmp_moves [i];
+    (*nb_of_moves)++;
+    if (isMovementInWord (tmp_moves+i, MV_LEFT) || isMovementInWord (tmp_moves+i, MV_RIGHT) || isMovementInWord (tmp_moves+i, MV_CW) || isMovementInWord (tmp_moves+i, MV_CCW)) {
+      moves [*nb_of_moves] = createMovementWord ();
+      (*nb_of_moves)++;
+    }
+  }
+}
 static void *bot_TetrX (void *_bot) {
   Tbot *bot = (Tbot*) _bot;
   Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL);
@@ -215,6 +235,7 @@ static void *bot_TetrX (void *_bot) {
         bot->next_moves[i] = best_node->moves[i];
       }
       bot->next_moves_length = best_node->nb_of_moves;
+      translate_moves (bot->next_moves, &bot->next_moves_length);
       // Signal that the next piece is ready.
       setOutputPieceReadyFlag (bot, true);
       // Reset the flag
@@ -290,9 +311,6 @@ static Tmovement getBotMovement (Tbot *bot) {
 
   if (getQueueSize (&next_moves) == 0) {
     // Ask the bot to prepare the input
-    // if (!getShouldOutputPieceFlag (bot)) {
-      // setShouldOutputPieceFlag (bot, true);
-    // }
 
     // When input is prepared, get it & reset flag
     if (getOutputPieceReadyFlag(bot)) {

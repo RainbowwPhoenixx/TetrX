@@ -3,6 +3,7 @@
 
 #include "../tetris_engine/tetris_engine.h"
 #include "../interface/type_interface.h"
+#include "move_queue.h"
 #include "tree.h"
 #include <pthread.h>
 #include <stdbool.h>
@@ -24,7 +25,7 @@ typedef struct {
   // pthread_mutex_t should_reset_search_mutex;
   // pthread_mutex_t should_end_bot_mutex;
 
-  Tmovement next_moves[15];
+  Tmovement next_moves[MAX_MOVES];
   Tbyte next_moves_length;
 
   Tnext_queue new_pieces;
