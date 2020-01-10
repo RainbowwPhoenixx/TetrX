@@ -43,6 +43,13 @@ void setBoardCurrentARR (Tboard *board, Tbyte new_ARR) {
   board->current_ARR = new_ARR;
 }
 
+Tbyte getBoardCurrentSoftDropARR (Tboard *board) {
+  return board->current_SD_ARR;
+}
+void setBoardCurrentSoftDropARR (Tboard *board, Tbyte new_SD_ARR) {
+  board->current_SD_ARR = new_SD_ARR;
+}
+
 Tmovement *getBoardPreviousMv (Tboard *board) {
   return &board->previous_mv;
 }
@@ -89,6 +96,7 @@ Tboard createBoard () {
   setBoardHoldPiece (&b, EMPTY);
   setBoardCurrentDAS (&b, 0);
   setBoardCurrentARR (&b, 0);
+  setBoardCurrentSoftDropARR (&b, 0);
   setBoardPreviousMv (&b, createMovementWord ());
   setBoardLinesCleared (&b, 0);
   setBoardHasLostStatus (&b, false);
@@ -107,6 +115,7 @@ void copyBoard (Tboard *dest, Tboard *src) {
   setBoardHoldPiece (dest, getBoardHoldPiece (src));
   setBoardCurrentDAS (dest, getBoardCurrentDAS (src));
   setBoardCurrentARR (dest, getBoardCurrentARR (src));
+  setBoardCurrentSoftDropARR (dest, getBoardCurrentSoftDropARR (src));
   setBoardPreviousMv (dest, *getBoardPreviousMv (src));
   setBoardLinesCleared (dest, getBoardLinesCleared (src));
   copyNextQueue (getBoardNextQueue (dest), getBoardNextQueue (src));

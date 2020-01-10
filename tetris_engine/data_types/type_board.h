@@ -20,6 +20,7 @@ typedef struct {
 
   Tbyte current_DAS;
   Tbyte current_ARR;
+  Tbyte current_SD_ARR;
   Tmovement previous_mv;
 
   unsigned int lines_cleared;
@@ -40,6 +41,9 @@ void setBoardCurrentDAS (Tboard *board, Tbyte new_DAS);
 
 Tbyte getBoardCurrentARR (Tboard *board);
 void setBoardCurrentARR (Tboard *board, Tbyte new_DAS);
+
+Tbyte getBoardCurrentSoftDropARR (Tboard *board);
+void setBoardCurrentSoftDropARR (Tboard *board, Tbyte new_SD_ARR);
 
 Tmovement *getBoardPreviousMv (Tboard *board);
 void setBoardPreviousMv (Tboard *board, Tmovement new_mv);
