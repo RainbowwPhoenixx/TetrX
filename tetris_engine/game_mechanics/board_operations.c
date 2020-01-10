@@ -6,6 +6,7 @@
 
 #define DAS_VALUE 10
 #define ARR_VALUE 2
+#define SD_ARR_VALUE 2
 
 // Kick for the different pieces [rotation_state][kick_index][x or y]
 static Tcoordinate_diff not_I_kicks[4][5][2] = {
@@ -292,7 +293,7 @@ void applyInput (Tboard *b, Tmovement mv) {
     performRotateCCW (b);
   }
 
-  // Translation processing TODO add use of DAS
+  // Translation processing
   if (isMovementInWord (&mv, MV_LEFT) && isMovementInWord (&mv, MV_RIGHT)) {
     // If both rotation buttons are pressed, don't do anything
   } else if (isMovementInWord (&mv, MV_LEFT)) {
@@ -325,7 +326,12 @@ void applyInput (Tboard *b, Tmovement mv) {
 
   // SD processing
   if (isMovementInWord (&mv, MV_SD)) {
-    performSoftDrop (b);
+    if (getBoardCurrentSoftDropARR (b) < SD_ARR_VALUE) {
+      setBoardCurrentSoftDropARR (b, getBoardCurrentSoftDropARR (b)+1);
+    } else {
+      setBoardCurrentSoftDropARR (b, 0);
+      performSoftDrop (b);
+    }
   }
 
   // Hold processing
