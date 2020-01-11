@@ -28,3 +28,4 @@ Switching to C is also an opportunity to :
 - Implement scoring
 - Create a recording functionality
 - Create a replay functionality
+- Read the different options from a text file at runtime.
