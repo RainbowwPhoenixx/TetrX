@@ -101,7 +101,25 @@ void setNewPiecesReadyFlag (Tbot *bot, bool new_flag) {
   bot->new_pieces_ready_flag = new_flag;
 }
 
+static float computeBumpiness (Tbot_board *board) {
+  Tcoordinate column_heights[C_MATRIX_WIDTH];
 
+  for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
+    Tcoordinate j = C_MATRIX_HEIGHT-1;
+    while (j > -1 && isMinoAtPosEmpty(getBotBoardMatrix (board), i, j)) {
+      j--;
+    }
+    column_heights [i] = j+1;
+  }
+
+  int bumpiness = 0;
+  for (Tcoordinate i = 0; i < C_MATRIX_WIDTH-1; i++) {
+    int diff = column_heights [i] - column_heights[i+1];
+    bumpiness += (diff>0)?(diff):(-diff);
+  }
+
+  return (float) bumpiness;
+}
 static float computeAvrgHeight (Tbot_board *board) {
   int height_sum = 0;
 
@@ -129,7 +147,7 @@ static float computeMaxHeight (Tbot_board *board) {
   return (float) max_height;
 }
 static float evaluateBoard (Tbot_board *board) {
-  return 1/(computeMaxHeight (board) + computeAvrgHeight (board));
+  return 1/(10*computeMaxHeight (board) + 30*computeAvrgHeight (board) + 1*computeBumpiness (board));
 }
 static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
   // Generate the possible moves from the given node, and assign them a score
