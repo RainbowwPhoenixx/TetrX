@@ -1,5 +1,4 @@
 #include "bot.h"
-#include "move_queue.h"
 #include <unistd.h>
 
 // Accessors
@@ -102,7 +101,25 @@ void setNewPiecesReadyFlag (Tbot *bot, bool new_flag) {
   bot->new_pieces_ready_flag = new_flag;
 }
 
+static float computeBumpiness (Tbot_board *board) {
+  Tcoordinate column_heights[C_MATRIX_WIDTH];
 
+  for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
+    Tcoordinate j = C_MATRIX_HEIGHT-1;
+    while (j > -1 && isMinoAtPosEmpty(getBotBoardMatrix (board), i, j)) {
+      j--;
+    }
+    column_heights [i] = j+1;
+  }
+
+  int bumpiness = 0;
+  for (Tcoordinate i = 0; i < C_MATRIX_WIDTH-1; i++) {
+    int diff = column_heights [i] - column_heights[i+1];
+    bumpiness += (diff>0)?(diff):(-diff);
+  }
+
+  return (float) bumpiness;
+}
 static float computeAvrgHeight (Tbot_board *board) {
   int height_sum = 0;
 
@@ -130,7 +147,7 @@ static float computeMaxHeight (Tbot_board *board) {
   return (float) max_height;
 }
 static float evaluateBoard (Tbot_board *board) {
-  return 1/(computeMaxHeight (board) + computeAvrgHeight (board));
+  return 1/(10*computeMaxHeight (board) + 30*computeAvrgHeight (board) + 1*computeBumpiness (board));
 }
 static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
   // Generate the possible moves from the given node, and assign them a score
@@ -200,6 +217,27 @@ static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
 }
 
 // Thinking function
+static void translate_moves (Tmovement *moves, Tbyte *nb_of_moves) {
+  // Translate moves from the bot's thinking to the game's thinking
+
+  // Copy the moves in a temporary list
+  Tmovement tmp_moves[MAX_MOVES];
+  Tbyte tmp_nb_of_moves = *nb_of_moves;
+  for (Tbyte i = 0; i < tmp_nb_of_moves; i++) {
+    tmp_moves[i] = moves [i];
+  }
+
+  // Space out side moves (hypertap, not DAS)
+  *nb_of_moves = 0;
+  for (Tbyte i = 0; i < tmp_nb_of_moves; i++) {
+    moves[*nb_of_moves] = tmp_moves [i];
+    (*nb_of_moves)++;
+    if (isMovementInWord (tmp_moves+i, MV_LEFT) || isMovementInWord (tmp_moves+i, MV_RIGHT) || isMovementInWord (tmp_moves+i, MV_CW) || isMovementInWord (tmp_moves+i, MV_CCW)) {
+      moves [*nb_of_moves] = createMovementWord ();
+      (*nb_of_moves)++;
+    }
+  }
+}
 static void *bot_TetrX (void *_bot) {
   Tbot *bot = (Tbot*) _bot;
   Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL);
@@ -215,6 +253,7 @@ static void *bot_TetrX (void *_bot) {
         bot->next_moves[i] = best_node->moves[i];
       }
       bot->next_moves_length = best_node->nb_of_moves;
+      translate_moves (bot->next_moves, &bot->next_moves_length);
       // Signal that the next piece is ready.
       setOutputPieceReadyFlag (bot, true);
       // Reset the flag
@@ -290,9 +329,6 @@ static Tmovement getBotMovement (Tbot *bot) {
 
   if (getQueueSize (&next_moves) == 0) {
     // Ask the bot to prepare the input
-    // if (!getShouldOutputPieceFlag (bot)) {
-      // setShouldOutputPieceFlag (bot, true);
-    // }
 
     // When input is prepared, get it & reset flag
     if (getOutputPieceReadyFlag(bot)) {

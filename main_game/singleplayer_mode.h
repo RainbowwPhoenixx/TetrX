@@ -3,7 +3,6 @@
 
 #include "../tetris_engine/tetris_engine.h"
 #include "../interface/terminal_interface.h"
-#include <unistd.h>
 
 void playSingleplayer ();
 

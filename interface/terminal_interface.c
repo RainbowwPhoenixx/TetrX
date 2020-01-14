@@ -1,6 +1,8 @@
 #include <ncurses.h>
 #include "terminal_interface.h"
 #include "../tetris_engine/tetris_engine.h"
+#include <unistd.h>
+#include <SDL.h>
 
 // Definition of the color IDs for each of the shapes
 #define COL_L 1
@@ -35,6 +37,17 @@
 #define HOLD_WINDOW_Y 1
 #define HOLD_WINDOW_HEIGHT 2
 #define HOLD_WINDOW_WIDTH 10
+
+#define LINES_WINDOW_X 1
+#define LINES_WINDOW_Y 10
+#define LINES_WINDOW_HEIGHT 1
+#define LINES_WINDOW_WIDTH 10
+
+// Definition of the duration of a frame (in microseconds)
+#define FRAME_DURATION 16666
+// Definition of the different delays (in # of frames)
+#define LINE_CLEAR_DELAY 10 //MUST BE BETWEEN 0 AND 10
+#define ENTRY_DELAY 0
 
 const char mino_skin[] = "  ";
 
@@ -75,6 +88,7 @@ static void initDisplay () {
   win_matrix = newwin (MATRIX_WINDOW_HEIGHT, MATRIX_WINDOW_WIDTH, MATRIX_WINDOW_Y, MATRIX_WINDOW_X);
   win_next = newwin (NEXT_WINDOW_HEIGHT, NEXT_WINDOW_WIDTH, NEXT_WINDOW_Y, NEXT_WINDOW_X);
   win_hold = newwin (HOLD_WINDOW_HEIGHT, HOLD_WINDOW_WIDTH, HOLD_WINDOW_Y, HOLD_WINDOW_X);
+  win_lines = newwin (LINES_WINDOW_HEIGHT, LINES_WINDOW_WIDTH, LINES_WINDOW_Y, LINES_WINDOW_X);
 }
 static void resetScreen () {
   // Clears the whole terminal
@@ -86,7 +100,9 @@ static void updateScreen() {
   wnoutrefresh (win_matrix);
   wnoutrefresh (win_next);
   wnoutrefresh (win_hold);
+  wnoutrefresh (win_lines);
   doupdate();
+  usleep(FRAME_DURATION);
 }
 static void endDisplay () {
   // Does all of the necessary operations to close the display
@@ -100,6 +116,10 @@ static void endDisplay () {
 static void displaySkin () {
   // Get the skin from the skin file and display it on stdscr
   FILE *fp = fopen("res/terminal_skin", "r");
+  if (fp == NULL) {
+    printf ("Could not load the background");
+    exit (-1);
+  }
   char line[MAX_CHAR_SKIN_WIDTH];
   Tbyte i = 0;
   while (fgets(line, MAX_CHAR_SKIN_WIDTH, fp) != NULL) {
@@ -218,6 +238,23 @@ static void showMatrix (Tmatrix *matrix) {
     }
   }
 }
+static void showLinesCleared (Tline_counter lines) {
+  // wborder (win_lines, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+  wmove (win_lines, 0, 0);
+  wprintw (win_lines, "%d", lines);
+}
+static void lineClearAnimation (Tcoordinate *lines, Tbyte number_of_lines) {
+  Tcoordinate real_x, real_y;
+  wattron (win_matrix, COLOR_PAIR(getColorFromShape (EMPTY)));
+  for (Tbyte i = 0; i < LINE_CLEAR_DELAY; i++) {
+    for (Tbyte j = 0; j < number_of_lines; j++) {
+      translateCoordinates (i, lines[j], 0, MATRIX_WINDOW_HEIGHT-1, &real_x, &real_y);
+      showMinoAtTerminalCoords (win_matrix ,real_x, real_y);
+    }
+    updateScreen ();
+  }
+  wattroff (win_matrix, COLOR_PAIR(getColorFromShape (EMPTY)));
+}
 
 static void showBoard (Tboard *board) {
   // Global function to display all the board components
@@ -225,31 +262,45 @@ static void showBoard (Tboard *board) {
   showActiveTetrimino (getBoardActiveTetrimino (board));
   showHold (getBoardHoldPiece (board));
   showNextQueue (getBoardNextQueue (board));
+  showLinesCleared (getBoardLinesCleared (board));
 }
 
 // Input
 
 static void initInput () {
   // Initialises the input system
-  noecho ();
-  cbreak();
-  nodelay(stdscr, TRUE);
-  keypad(stdscr, TRUE);
+  if (SDL_Init (SDL_INIT_VIDEO) != 0) {
+    printf ("Error : SDL could not be initialized. Message from SDL :\n %s", SDL_GetError());
+    exit(-1);
+  }
+  SDL_Window *SDLwin = SDL_CreateWindow ("Titre", 0, 0, 10, 10, 0); // Make the window as discreet as possible
 }
 static Tmovement getInput () {
   // Gets input from the player
-  Tmovement input = createMovementWord();
-  char ch;
+  static Tmovement input; // Initialized at 0 because it is static
+  Tmovement tmp_mv;
+  SDL_Keycode key_kc;
+  SDL_Event event;
 
-  while ((ch = getch ()) != ERR) {
-    switch (ch) {
-      case 'q' : addMovementToWord (&input, MV_LEFT); break;
-      case 'd' : addMovementToWord (&input, MV_RIGHT); break;
-      case 'l' : addMovementToWord (&input, MV_CW); break;
-      case 'm' : addMovementToWord (&input, MV_CCW); break;
-      case 's' : addMovementToWord (&input, MV_SD); break;
-      case '*' : addMovementToWord (&input, MV_HD); break;
-      case 'z' : addMovementToWord (&input, MV_HOLD); break;
+  while (SDL_PollEvent(&event)) {
+    if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
+      key_kc = event.key.keysym.sym;
+      switch (key_kc) {
+        case SDLK_q        : tmp_mv = MV_LEFT; break;
+        case SDLK_d        : tmp_mv = MV_RIGHT; break;
+        case SDLK_l        : tmp_mv = MV_CW; break;
+        case SDLK_m        : tmp_mv = MV_CCW; break;
+        case SDLK_s        : tmp_mv = MV_SD; break;
+        case SDLK_ASTERISK : tmp_mv = MV_HD; break;
+        case SDLK_z        : tmp_mv = MV_HOLD; break;
+        default : tmp_mv = createMovementWord (); // Reset if no known key is pressed
+      }
+    }
+    if (event.type == SDL_KEYDOWN && tmp_mv) {
+      addMovementToWord (&input, tmp_mv);
+    }
+    if (event.type == SDL_KEYUP && tmp_mv) {
+      removeMovementFromWord (&input, tmp_mv);
     }
   }
 
@@ -257,6 +308,7 @@ static Tmovement getInput () {
 }
 static void endInput() {
   // Function to end the input system
+  SDL_Quit();
 }
 static void nop () {}
 
@@ -272,6 +324,7 @@ Tinterface_out getTerminalInterfaceOut () {
   IO_out.updateScreenFunc = updateScreen;
   IO_out.endDisplayFunc = endDisplay;
   IO_out.showBoardFunc = showBoard;
+  IO_out.lineClearAnimationFunc = lineClearAnimation;
 
   return IO_out;
 }

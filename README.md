@@ -18,14 +18,14 @@ Switching to C is also an opportunity to :
 ## To do
 
 - Make the ncurses library be linked statically for compatibility with computers where ncurses is not installed
-- Implement game mechanics
-- Create a main program
+- Make SDL be linked statically for the same reason
 - Make keys configurable
 - Create a graphical interface
-- Rip out the ncurses input system and replace it with SDL
 - Make a versus mode
 - Implement gravity
 - Implement lock delay
-- Implement DAS
 - Implement T-spin detection
 - Implement scoring
+- Create a recording functionality
+- Create a replay functionality
+- Read the different options from a text file at runtime.

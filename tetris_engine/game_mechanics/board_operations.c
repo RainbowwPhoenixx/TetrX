@@ -1,7 +1,12 @@
 #include "board_operations.h"
+#include "../../interface/type_interface.h"
 
 #define MINIMUM_QUEUE_LENGTH 8
 #define MAXIMUM_AUTHORIZED_HEIGHT 20
+
+#define DAS_VALUE 10
+#define ARR_VALUE 1
+#define SD_ARR_VALUE 1
 
 // Kick for the different pieces [rotation_state][kick_index][x or y]
 static Tcoordinate_diff not_I_kicks[4][5][2] = {
@@ -16,6 +21,8 @@ static Tcoordinate_diff I_kicks[4][5][2] = {
   {{ 0,  0}, { 2,  0}, {-1,  0}, { 2,  1}, {-1, -2}},
   {{ 0,  0}, { 1,  0}, {-2,  0}, { 1, -2}, {-2,  1}}
 };
+
+extern Tinterface_out IO_out;
 
 bool isBoardStateValid (Tboard *b) {
   // Checks that the position of the active tetrimino is valid in relation to the matrix.
@@ -97,6 +104,10 @@ void clearLines (Tboard *b) {
       }
     }
   }
+
+  // Add the cleared lines to the line counter
+  setBoardLinesCleared (b, getBoardLinesCleared (b) + number_of_lines_to_clear);
+  IO_out.lineClearAnimationFunc (lines_to_clear, number_of_lines_to_clear);
 }
 void lockActiveTetrimino (Tboard *b) {
   Ttetrimino *t = getBoardActiveTetrimino (b);
@@ -271,11 +282,68 @@ static void performHold (Tboard *b) {
 // General input handler
 void applyInput (Tboard *b, Tmovement mv) {
   // For each movement in the input, apply it to the board
-  if (isMovementInWord (&mv, MV_LEFT )) performMoveLeft (b);
-  if (isMovementInWord (&mv, MV_RIGHT)) performMoveRight (b);
-  if (isMovementInWord (&mv, MV_CW   )) performRotateCW (b);
-  if (isMovementInWord (&mv, MV_CCW  )) performRotateCCW (b);
-  if (isMovementInWord (&mv, MV_SD   )) performSoftDrop (b);
-  if (isMovementInWord (&mv, MV_HD   )) performHardDrop (b);
-  if (isMovementInWord (&mv, MV_HOLD )) performHold (b);
+  // Processing order : rotation, translation, SD,  hold, HD.
+
+  // Rotation processing
+  if (isMovementInWord (&mv, MV_CCW) && isMovementInWord (&mv, MV_CW)) {
+    // If both rotation buttons are pressed, don't do anything
+  } else if (isMovementInWord (&mv, MV_CW) && !isMovementInWord (getBoardPreviousMv (b), MV_CW)) {
+    performRotateCW (b);
+  } else if (isMovementInWord (&mv, MV_CCW) && !isMovementInWord (getBoardPreviousMv (b), MV_CCW)) {
+    performRotateCCW (b);
+  }
+
+  // Translation processing
+  if (isMovementInWord (&mv, MV_LEFT) && isMovementInWord (&mv, MV_RIGHT)) {
+    // If both rotation buttons are pressed, reset DAS
+    setBoardCurrentARR (b, 0);
+  } else if (isMovementInWord (&mv, MV_LEFT)) {
+    if (!isMovementInWord (getBoardPreviousMv (b), MV_LEFT)) {
+      performMoveLeft (b);
+    } else if (getBoardCurrentDAS (b) < DAS_VALUE) {
+      setBoardCurrentDAS (b, getBoardCurrentDAS (b)+1);
+    } else if (getBoardCurrentARR (b) < ARR_VALUE) {
+      setBoardCurrentARR (b, getBoardCurrentARR (b)+1);
+    } else {
+      setBoardCurrentARR (b, 0);
+      performMoveLeft (b);
+    }
+
+  } else if (isMovementInWord (&mv, MV_RIGHT)) {
+    if (!isMovementInWord (getBoardPreviousMv (b), MV_RIGHT)) {
+      performMoveRight (b);
+    } else if (getBoardCurrentDAS (b) < DAS_VALUE) {
+      setBoardCurrentDAS (b, getBoardCurrentDAS (b)+1);
+    } else if (getBoardCurrentARR (b) < ARR_VALUE) {
+      setBoardCurrentARR (b, getBoardCurrentARR (b)+1);
+    } else {
+      setBoardCurrentARR (b, 0);
+      performMoveRight (b);
+    }
+
+  } else {
+    setBoardCurrentDAS (b, 0);
+  }
+
+  // SD processing
+  if (isMovementInWord (&mv, MV_SD)) {
+    if (getBoardCurrentSoftDropARR (b) < SD_ARR_VALUE) {
+      setBoardCurrentSoftDropARR (b, getBoardCurrentSoftDropARR (b)+1);
+    } else {
+      setBoardCurrentSoftDropARR (b, 0);
+      performSoftDrop (b);
+    }
+  }
+
+  // Hold processing
+  if (isMovementInWord (&mv, MV_HOLD)) {
+    performHold (b);
+  }
+
+  // Hard drop processing
+  if (isMovementInWord (&mv, MV_HD) && !isMovementInWord (getBoardPreviousMv (b), MV_HD)) {
+    performHardDrop (b);
+  }
+
+  setBoardPreviousMv (b, mv);
 }

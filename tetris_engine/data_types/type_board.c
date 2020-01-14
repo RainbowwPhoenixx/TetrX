@@ -29,6 +29,41 @@ void setBoardHoldPiece (Tboard *board, Tshape new_hold_piece) {
   board->hold_piece = new_hold_piece;
 }
 
+Tbyte getBoardCurrentDAS (Tboard *board) {
+  return board->current_DAS;
+}
+void setBoardCurrentDAS (Tboard *board, Tbyte new_DAS) {
+  board->current_DAS = new_DAS;
+}
+
+Tbyte getBoardCurrentARR (Tboard *board) {
+  return board->current_ARR;
+}
+void setBoardCurrentARR (Tboard *board, Tbyte new_ARR) {
+  board->current_ARR = new_ARR;
+}
+
+Tbyte getBoardCurrentSoftDropARR (Tboard *board) {
+  return board->current_SD_ARR;
+}
+void setBoardCurrentSoftDropARR (Tboard *board, Tbyte new_SD_ARR) {
+  board->current_SD_ARR = new_SD_ARR;
+}
+
+Tmovement *getBoardPreviousMv (Tboard *board) {
+  return &board->previous_mv;
+}
+void setBoardPreviousMv (Tboard *board, Tmovement new_mv) {
+  board->previous_mv = new_mv;
+}
+
+Tline_counter getBoardLinesCleared (Tboard *b) {
+  return b->lines_cleared;
+}
+void setBoardLinesCleared (Tboard *b, Tline_counter lines) {
+  b->lines_cleared = lines;
+}
+
 bool getBoardHasHeldThisTurnStatus (Tboard *b) {
   return b->has_held_this_turn;
 }
@@ -59,6 +94,11 @@ Tboard createBoard () {
   setBoardActiveTetrimino (&b, createTetrimino (EMPTY));
   setBoardNextQueue (&b, createNextQueue ());
   setBoardHoldPiece (&b, EMPTY);
+  setBoardCurrentDAS (&b, 0);
+  setBoardCurrentARR (&b, 0);
+  setBoardCurrentSoftDropARR (&b, 0);
+  setBoardPreviousMv (&b, createMovementWord ());
+  setBoardLinesCleared (&b, 0);
   setBoardHasLostStatus (&b, false);
   setBoardShouldEndTurnStatus (&b, false);
   setBoardHasHeldThisTurnStatus (&b, false);
@@ -73,6 +113,11 @@ void copyBoard (Tboard *dest, Tboard *src) {
   copyMatrix (getBoardMatrix (dest), getBoardMatrix (src));
   copyTetrimino (getBoardActiveTetrimino (dest), getBoardActiveTetrimino (src));
   setBoardHoldPiece (dest, getBoardHoldPiece (src));
+  setBoardCurrentDAS (dest, getBoardCurrentDAS (src));
+  setBoardCurrentARR (dest, getBoardCurrentARR (src));
+  setBoardCurrentSoftDropARR (dest, getBoardCurrentSoftDropARR (src));
+  setBoardPreviousMv (dest, *getBoardPreviousMv (src));
+  setBoardLinesCleared (dest, getBoardLinesCleared (src));
   copyNextQueue (getBoardNextQueue (dest), getBoardNextQueue (src));
   setBoardHasLostStatus (dest, getBoardHasLostStatus(src));
   setBoardShouldEndTurnStatus (dest, getBoardShouldEndTurnStatus (src));
