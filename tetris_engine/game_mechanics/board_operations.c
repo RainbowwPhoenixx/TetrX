@@ -5,8 +5,8 @@
 #define MAXIMUM_AUTHORIZED_HEIGHT 20
 
 #define DAS_VALUE 10
-#define ARR_VALUE 2
-#define SD_ARR_VALUE 2
+#define ARR_VALUE 1
+#define SD_ARR_VALUE 1
 
 // Kick for the different pieces [rotation_state][kick_index][x or y]
 static Tcoordinate_diff not_I_kicks[4][5][2] = {
@@ -295,7 +295,8 @@ void applyInput (Tboard *b, Tmovement mv) {
 
   // Translation processing
   if (isMovementInWord (&mv, MV_LEFT) && isMovementInWord (&mv, MV_RIGHT)) {
-    // If both rotation buttons are pressed, don't do anything
+    // If both rotation buttons are pressed, reset DAS
+    setBoardCurrentARR (b, 0);
   } else if (isMovementInWord (&mv, MV_LEFT)) {
     if (!isMovementInWord (getBoardPreviousMv (b), MV_LEFT)) {
       performMoveLeft (b);
