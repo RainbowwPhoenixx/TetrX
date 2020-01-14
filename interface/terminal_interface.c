@@ -116,6 +116,10 @@ static void endDisplay () {
 static void displaySkin () {
   // Get the skin from the skin file and display it on stdscr
   FILE *fp = fopen("res/terminal_skin", "r");
+  if (fp == NULL) {
+    printf ("Could not load the background");
+    exit (-1);
+  }
   char line[MAX_CHAR_SKIN_WIDTH];
   Tbyte i = 0;
   while (fgets(line, MAX_CHAR_SKIN_WIDTH, fp) != NULL) {
@@ -265,8 +269,10 @@ static void showBoard (Tboard *board) {
 
 static void initInput () {
   // Initialises the input system
-  SDL_Init (0);
-  SDL_InitSubSystem (SDL_INIT_VIDEO);
+  if (SDL_Init (SDL_INIT_VIDEO) != 0) {
+    printf ("Error : SDL could not be initialized. Message from SDL :\n %s", SDL_GetError());
+    exit(-1);
+  }
   SDL_Window *SDLwin = SDL_CreateWindow ("Titre", 0, 0, 10, 10, 0); // Make the window as discreet as possible
 }
 static Tmovement getInput () {

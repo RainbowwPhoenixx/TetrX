@@ -15,7 +15,7 @@ int getGamemode () {
     printf("1. Singleplayer\n");
     printf("2. 2-player (unavailable)\n");
 
-    scanf("%d", &choix);
+    {int r = scanf("%d", &choix);} // Get returned value
   }
 
   return choix;
@@ -29,7 +29,7 @@ int getPlayerType (char *question) {
     printf("1. Human\n");
     printf("2. Bot\n");
 
-    scanf("%d", &choix);
+    {int r = scanf("%d", &choix);} // Get returned value
   }
 
   return choix;
