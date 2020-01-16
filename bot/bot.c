@@ -268,9 +268,13 @@ static void *bot_TetrX (void *_bot) {
     }
     if (getShouldResetSearchFlag (bot)) {
       // Free the current search tree
-      // Reset the queue
-      // Regenerate the first node
+      freeNode (search_tree);
+      // Get the new values
+      search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL);
+      copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
+      best_node = NULL;
       // Reset the flag
+      setShouldResetSearchFlag (bot, false);
     }
     if (getNewPiecesReadyFlag (bot)) {
       Tbyte queue_length = getNextQueueLength (&bot->new_pieces);
