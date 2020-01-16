@@ -216,7 +216,7 @@ static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
   return best_node;
 }
 
-// Thinking function
+// Various processing functions
 static void translate_moves (Tmovement *moves, Tbyte *nb_of_moves) {
   // Translate moves from the bot's thinking to the game's thinking
 
@@ -238,6 +238,20 @@ static void translate_moves (Tmovement *moves, Tbyte *nb_of_moves) {
     }
   }
 }
+static Tnode *getRootDirectChildLink (Tnode *root, Tnode *node) {
+  // Goes up the parent chain of 'node' until it gets to 'root'
+  // Allows to get the immediate next movement from a best child
+  // several levels down.
+
+  Tnode *tmp_node = node;
+
+  while (getNodeImmediateParent (tmp_node) != root) {
+    tmp_node = getNodeImmediateParent (tmp_node);
+  }
+
+  return tmp_node;
+}
+// Bot main loop
 static void *bot_TetrX (void *_bot) {
   Tbot *bot = (Tbot*) _bot;
   Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
@@ -248,21 +262,23 @@ static void *bot_TetrX (void *_bot) {
   while (!getShouldEndBotFlag (bot)) {
     // Check all the flags
     if (getShouldOutputPieceFlag (bot) && best_node  && !getNewPiecesReadyFlag (bot)) {
+      // Get the immediate child form the best node
+      Tnode *best_immediate_child = getRootDirectChildLink (search_tree, best_node);
       // Output the moves of the next piece of the best path found
-      for (Tbyte i = 0; i < best_node->nb_of_moves; i++) {
-        bot->next_moves[i] = best_node->moves[i];
+      for (Tbyte i = 0; i < best_immediate_child->nb_of_moves; i++) {
+        bot->next_moves[i] = best_immediate_child->moves[i];
       }
-      bot->next_moves_length = best_node->nb_of_moves;
+      bot->next_moves_length = best_immediate_child->nb_of_moves;
       translate_moves (bot->next_moves, &bot->next_moves_length);
       // Signal that the next piece is ready.
       setOutputPieceReadyFlag (bot, true);
       // Reset the flag
       setShouldOutputPieceFlag (bot, false);
       // Advance to think on the next board state
-      setNodeIthChild (search_tree, getNodeChildID (best_node), NULL);
+      setNodeIthChild (search_tree, getNodeChildID (best_immediate_child), NULL);
       freeNode (search_tree);
-      search_tree = best_node;
-      best_node = NULL;
+      search_tree = best_immediate_child;
+      best_immediate_child = NULL;
       advanceNextQueue (&global_next_queue);
       setBotBoardNextQueueOffset (getNodeBotBoard (search_tree), getBotBoardNextQueueOffset (getNodeBotBoard (search_tree))-1);
     }
