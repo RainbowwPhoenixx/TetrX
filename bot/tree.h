@@ -8,6 +8,7 @@
 
 // Definition of the search tree used by the bot
 #define MAX_MOVEMENTS 15
+#define MAX_CHILDREN 100
 
 typedef struct _Tnode {
   // A node contains the state of the board, with the active piece
@@ -19,12 +20,14 @@ typedef struct _Tnode {
   Tmovement moves[MAX_MOVEMENTS];
   float board_value;
 
+  // Children related variables
   unsigned short nb_of_children;
-  struct _Tnode* children[100];
-
+  struct _Tnode* children[MAX_CHILDREN];
   bool are_children_generated;
+
+  // Parent related variables
   unsigned short child_id;
-  // Pointer to parent, bool is_root
+  struct _Tnode *immediate_parent;
 } Tnode;
 
 // Accessors
@@ -52,8 +55,11 @@ void setNodeAreChildrenGenerated (Tnode *node, bool new_val);
 unsigned short getNodeChildID (Tnode *node);
 void setNodeChildID (Tnode *node, unsigned short new_val);
 
+Tnode *getNodeImmediateParent (Tnode* node);
+void setNodeImmediateParent (Tnode *node, Tnode *parent);
+
 // Constructor & destructor
-Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves);
+Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves, Tnode *parent);
 void freeNode (Tnode *tree);
 
 #endif /* end of include guard: __TREE_H__ */

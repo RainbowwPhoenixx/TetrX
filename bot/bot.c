@@ -200,7 +200,7 @@ static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
         botLockActiveTetrimino (&new_board);
         botClearLines (&new_board);
 
-        Tnode *new_node = createNode (new_board, nb_of_moves, moves);
+        Tnode *new_node = createNode (new_board, nb_of_moves, moves, node);
         setNodeIthChild (node, getNodeNbOfChildren (node), new_node);
         setNodeNbOfChildren (node, getNodeNbOfChildren (node)+1);
         float board_score = evaluateBoard (&new_board);
@@ -240,7 +240,7 @@ static void translate_moves (Tmovement *moves, Tbyte *nb_of_moves) {
 }
 static void *bot_TetrX (void *_bot) {
   Tbot *bot = (Tbot*) _bot;
-  Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL);
+  Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
   Tnext_queue global_next_queue = createNextQueue ();
   copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
   Tnode *best_node = NULL;
@@ -270,7 +270,7 @@ static void *bot_TetrX (void *_bot) {
       // Free the current search tree
       freeNode (search_tree);
       // Get the new values
-      search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL);
+      search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
       copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
       best_node = NULL;
       // Reset the flag
