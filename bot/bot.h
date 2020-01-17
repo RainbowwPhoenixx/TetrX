@@ -5,6 +5,7 @@
 #include "../interface/type_interface.h"
 #include "move_queue.h"
 #include "tree.h"
+#include "node_queue.h"
 #include <pthread.h>
 #include <stdbool.h>
 
