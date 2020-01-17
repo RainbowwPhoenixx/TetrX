@@ -1,7 +1,7 @@
 #include "bot.h"
 #include <unistd.h>
 
-#define BOT_MAX_PREVIEWS 2 // Do not set lower than 2
+#define BOT_MAX_PREVIEWS 2 // Do not set lower than 1
 
 // Accessors
 bool getShouldOutputPieceFlag (Tbot *bot) {
@@ -158,7 +158,8 @@ static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_
 
   Tnode *node = getFromNodeQueue (processing_queue);
   // If max previews is reached, don't compute
-  if (getBotBoardNextQueueOffset (getNodeBotBoard (node)) - getBotBoardNextQueueOffset (getNodeBotBoard (search_tree_root)) >= bot->max_previews) {
+  if (node == NULL ||
+      getBotBoardNextQueueOffset (getNodeBotBoard (node)) - getBotBoardNextQueueOffset (getNodeBotBoard (search_tree_root)) >= bot->max_previews) {
     // addToNodeQueue (processing_queue, node);
     return NULL;
   }
