@@ -19,6 +19,6 @@ void addToNodeQueueBeginning (Tnode_queue *queue, Tnode *node);
 Tnode *getFromNodeQueue (Tnode_queue *queue); // Pop the next element off the queue
 
 Tnode_queue createNodeQueue ();
-void freeNodeQueue (Tnode_queue queue);
+void freeNodeQueue (Tnode_queue *queue);
 
 #endif /* end of include guard: __NODE_QUEUE_H__ */

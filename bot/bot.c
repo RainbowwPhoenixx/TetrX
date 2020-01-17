@@ -307,7 +307,7 @@ static void *bot_TetrX (void *_bot) {
       advanceNextQueue (&global_next_queue);
       reduceNextPieceOffset (search_tree);
       // Resetting the queue
-      freeNodeQueue (processing_queue);
+      freeNodeQueue (&processing_queue);
       processing_queue = createNodeQueue ();
       addToNodeQueue (&processing_queue, search_tree);
     }
@@ -319,7 +319,7 @@ static void *bot_TetrX (void *_bot) {
       copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
       best_node = NULL;
       // Reset the processing queue
-      freeNodeQueue (processing_queue);
+      freeNodeQueue (&processing_queue);
       processing_queue = createNodeQueue ();
       addToNodeQueue (&processing_queue, search_tree);
       // Reset the flag
@@ -346,7 +346,7 @@ static void *bot_TetrX (void *_bot) {
   }
 
   // Free the memory
-  freeNodeQueue (processing_queue);
+  freeNodeQueue (&processing_queue);
   freeNode (search_tree);
 
   return NULL;

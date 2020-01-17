@@ -64,6 +64,8 @@ static void freeNodeQueueElements (Tnode_queue_element e) {
   }
   free (e);
 }
-void freeNodeQueue (Tnode_queue queue) {
-  freeNodeQueueElements (queue.head);
+void freeNodeQueue (Tnode_queue *queue) {
+  if (queue->size) {
+    freeNodeQueueElements (queue->head);
+  }
 }
