@@ -148,8 +148,8 @@ static float computeMaxHeight (Tbot_board *board) {
 
   return (float) max_height;
 }
-static float evaluateBoard (Tbot_board *board) {
-  return 1/(10*computeMaxHeight (board) + 30*computeAvrgHeight (board) + 2*computeBumpiness (board));
+static float evaluateBoard (Tbot_board *board, Tline_clear lines) {
+  return lines + 1/(10*computeMaxHeight (board) + 30*computeAvrgHeight (board) + 1*computeBumpiness (board));
 }
 static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_queue, Tnode_queue *processing_queue) {
   // Generate the possible moves from the given node, and assign them a score
@@ -211,12 +211,12 @@ static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_
         }
 
         botLockActiveTetrimino (&new_board);
-        botClearLines (&new_board);
+        Tline_clear lines = botClearLines (&new_board);
 
         Tnode *new_node = createNode (new_board, nb_of_moves, moves, node);
         setNodeIthChild (node, getNodeNbOfChildren (node), new_node);
         setNodeNbOfChildren (node, getNodeNbOfChildren (node)+1);
-        float board_score = evaluateBoard (&new_board);
+        float board_score = evaluateBoard (&new_board, lines);
         setNodeBoardValue (new_node, board_score);
         addToNodeQueue (processing_queue, new_node);
         if (board_score > best_score) {

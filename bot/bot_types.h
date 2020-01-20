@@ -3,6 +3,8 @@
 
 #include "../tetris_engine/tetris_engine.h"
 
+typedef enum {L0=0, L1=1, L2=2, L3=3, L4=4, TSS, TSD, TST} Tline_clear;
+
 typedef struct {
   Tmatrix matrix;
   Ttetrimino active_tetrimino;
@@ -29,7 +31,7 @@ Tbot_board convertBoardToBotBoard (Tboard *b);
 
 // Operations
 void botPopTetriminoFromQueue (Tbot_board *bb, Tnext_queue *next_queue);
-void botClearLines (Tbot_board *b);
+Tbyte botClearLines (Tbot_board *b);
 void botLockActiveTetrimino (Tbot_board *b);
 
 bool isBotBoardStateValid (Tbot_board *b);
