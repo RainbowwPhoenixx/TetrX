@@ -67,6 +67,13 @@ void setNodeImmediateParent (Tnode *node, Tnode *parent) {
   node->immediate_parent = parent;
 }
 
+float getNodeAccumulatedBoardValue (Tnode *node) {
+  return node->accumulated_board_value;
+}
+void setNodeAccumulatedBoardValue (Tnode *node, float new_acc_value) {
+  node->accumulated_board_value = new_acc_value;
+}
+
 
 Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves, Tnode *parent) {
   Tnode *tree = calloc (1, sizeof(Tnode));

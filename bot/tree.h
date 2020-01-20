@@ -28,6 +28,7 @@ typedef struct _Tnode {
   // Parent related variables
   unsigned short child_id;
   struct _Tnode *immediate_parent;
+  float accumulated_board_value;
 } Tnode;
 
 // Accessors
@@ -57,6 +58,9 @@ void setNodeChildID (Tnode *node, unsigned short new_val);
 
 Tnode *getNodeImmediateParent (Tnode* node);
 void setNodeImmediateParent (Tnode *node, Tnode *parent);
+
+float getNodeAccumulatedBoardValue (Tnode *node);
+void setNodeAccumulatedBoardValue (Tnode *node, float new_acc_value);
 
 // Constructor & destructor
 Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves, Tnode *parent);
