@@ -1,7 +1,9 @@
 #include "bot.h"
 #include <unistd.h>
 
-#define BOT_MAX_PREVIEWS 2 // Do not set lower than 1
+#define BOT_MAX_PREVIEWS 5 // Do not set lower than 1
+float accumulation_weights[20] = {1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16, 1/17, 1/17, 1/19, 1/20};
+// float accumulation_weights[20] = {1, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256};
 
 // Accessors
 bool getShouldOutputPieceFlag (Tbot *bot) {
@@ -149,7 +151,17 @@ static float computeMaxHeight (Tbot_board *board) {
   return (float) max_height;
 }
 static float evaluateBoard (Tbot_board *board, Tline_clear lines) {
-  return lines + 1/(10*computeMaxHeight (board) + 30*computeAvrgHeight (board) + 1*computeBumpiness (board));
+  return 10*lines*lines -10*computeMaxHeight (board) + -30*computeAvrgHeight (board) + -1*computeBumpiness (board);
+}
+static void accumulateScoreIntoParents (Tnode *highest_parent, Tnode *node, float score) {
+  Tnode *tmp_node = node;
+  Tbyte link_level = 0;
+
+  while (tmp_node != highest_parent) {
+    tmp_node = getNodeImmediateParent (tmp_node);
+    setNodeAccumulatedBoardValue (tmp_node, getNodeAccumulatedBoardValue (tmp_node) + score * accumulation_weights[0]);
+    link_level++;
+  }
 }
 static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_queue, Tnode_queue *processing_queue) {
   // Generate the possible moves from the given node, and assign them a score
@@ -218,6 +230,7 @@ static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_
         setNodeNbOfChildren (node, getNodeNbOfChildren (node)+1);
         float board_score = evaluateBoard (&new_board, lines);
         setNodeBoardValue (new_node, board_score);
+        accumulateScoreIntoParents (search_tree_root, new_node, board_score);
         addToNodeQueue (processing_queue, new_node);
         if (board_score > best_score) {
           best_score = board_score;
@@ -281,30 +294,36 @@ static void *bot_TetrX (void *_bot) {
   Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
   Tnext_queue global_next_queue = createNextQueue ();
   copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
-  Tnode *best_node = NULL;
   Tnode_queue processing_queue = createNodeQueue ();
   addToNodeQueue (&processing_queue, search_tree);
 
   while (!getShouldEndBotFlag (bot)) {
     // Check all the flags
-    if (getShouldOutputPieceFlag (bot) && best_node  && !getNewPiecesReadyFlag (bot)) {
-      // Get the immediate child form the best node
-      Tnode *best_immediate_child = getRootDirectChildLink (search_tree, best_node);
-      best_node = NULL;
-      // Output the moves of the next piece of the best path found
-      for (Tbyte i = 0; i < best_immediate_child->nb_of_moves; i++) {
-        bot->next_moves[i] = best_immediate_child->moves[i];
+    if (getShouldOutputPieceFlag (bot) && getNodeAreChildrenGenerated (search_tree)  && !getNewPiecesReadyFlag (bot)) {
+      // Get the best immediate child
+      Tnode *best_child;
+      float best_score = -1.0/0.0;
+      for (Tbyte i = 0; i < getNodeNbOfChildren (search_tree); i++) {
+        Tnode *best_child_candidate = getNodeIthChild (search_tree, i);
+        if (getNodeBoardValue (best_child_candidate) > best_score) {
+          best_score = getNodeBoardValue (best_child_candidate);
+          best_child = best_child_candidate;
+        }
       }
-      bot->next_moves_length = best_immediate_child->nb_of_moves;
+      // Output the moves of the next piece of the best path found
+      for (Tbyte i = 0; i < best_child->nb_of_moves; i++) {
+        bot->next_moves[i] = best_child->moves[i];
+      }
+      bot->next_moves_length = best_child->nb_of_moves;
       translate_moves (bot->next_moves, &bot->next_moves_length);
       // Signal that the next piece is ready.
       setOutputPieceReadyFlag (bot, true);
       // Reset the flag
       setShouldOutputPieceFlag (bot, false);
       // Advance to think on the next board state
-      setNodeIthChild (search_tree, getNodeChildID (best_immediate_child), NULL);
+      setNodeIthChild (search_tree, getNodeChildID (best_child), NULL);
       freeNode (search_tree);
-      search_tree = best_immediate_child;
+      search_tree = best_child;
       advanceNextQueue (&global_next_queue);
       reduceNextPieceOffset (search_tree);
       // Resetting the queue
@@ -318,7 +337,6 @@ static void *bot_TetrX (void *_bot) {
       // Get the new values
       search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
       copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
-      best_node = NULL;
       // Reset the processing queue
       freeNodeQueue (&processing_queue);
       processing_queue = createNodeQueue ();
@@ -336,13 +354,9 @@ static void *bot_TetrX (void *_bot) {
     }
 
     // Do the thinking
-    Tnode *best_node_candidate = expandNode (bot, search_tree, &global_next_queue, &processing_queue);
-    if (best_node_candidate == NULL) {
+    if (expandNode (bot, search_tree, &global_next_queue, &processing_queue) == NULL) {
       usleep (1000);
-    } else if (best_node == NULL || getNodeBoardValue (best_node_candidate) > getNodeBoardValue (best_node)) {
-      best_node = best_node_candidate;
     }
-
     // Generate the moves, compute their value, and put them in the queue
   }
 
