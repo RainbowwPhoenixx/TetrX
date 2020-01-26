@@ -16,11 +16,11 @@ Switching to C is also an opportunity to :
 - To launch the game run `./bin/TetrX`.
 
 ## To do
-
+### General
 - Make the ncurses library be linked statically for compatibility with computers where ncurses is not installed
 - Make SDL be linked statically for the same reason
-- Make keys configurable
-- Create a graphical interface
+- Read the different options from a text file at runtime
+### Game
 - Make a versus mode
 - Implement gravity
 - Implement lock delay
@@ -28,4 +28,12 @@ Switching to C is also an opportunity to :
 - Implement scoring
 - Create a recording functionality
 - Create a replay functionality
-- Read the different options from a text file at runtime.
+### Interface
+- Make keys configurable
+- Create a graphical interface
+- Implement animations properly
+### Bot
+- Add decent pathfinding for pieces
+- Implement multiple queues with different priorities
+- Implement more metrics for the evaluation function
+- Add logging
