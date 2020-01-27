@@ -1,7 +1,13 @@
 #include "bot.h"
 #include <unistd.h>
+#include <stdio.h>
 
 #define BOT_MAX_PREVIEWS 5 // Do not set lower than 1
+#define LOG_BOT_THINKING
+#ifdef LOG_BOT_THINKING
+#define LOGFILE "bot_debug.log"
+#endif
+
 // float accumulation_weights[20] = {1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16, 1/17, 1/17, 1/19, 1/20};
 // float accumulation_weights[20] = {1, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256};
 float accumulation_weights[20] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
@@ -106,6 +112,21 @@ void setNewPiecesReadyFlag (Tbot *bot, bool new_flag) {
   bot->new_pieces_ready_flag = new_flag;
 }
 
+Tbyte depth = 0;
+#ifdef LOG_BOT_THINKING
+// Debug functions
+int explored_nodes = 0;
+void logBestNode (FILE *logfile, Tnode *node) {
+  fprintf(logfile, "Chosen node had a score of : %12.2f\n", getNodeAccumulatedBoardValue (node));
+  fflush (logfile);
+}
+void logVarious (FILE *logfile) {
+  fprintf(logfile, "Thinking depth : %d\n", depth);
+  fprintf(logfile, "Explored nodes : %d\n", explored_nodes);
+  fflush (logfile);
+}
+#endif
+
 static void computeHeights (Tbot_board *board, Tcoordinate *column_heights) {
   // Computes the maximum heights for each column
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
@@ -166,6 +187,10 @@ static float evaluateBoard (Tbot_board *board, Tline_clear lines) {
   score += -.1*computeBumpiness (heights);
   score += -1000*computeNumberOfHoles (board, heights);
 
+  #ifdef LOG_BOT_THINKING
+  explored_nodes++;
+  #endif
+
   return score;
 }
 static void accumulateScoreIntoParents (Tnode *highest_parent, Tnode *node, float score) {
@@ -187,7 +212,7 @@ static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_
   Tnode *node = getFromNodeQueue (processing_queue);
   // If max previews is reached, don't compute
   if (node == NULL ||
-      getBotBoardNextQueueOffset (getNodeBotBoard (node)) - getBotBoardNextQueueOffset (getNodeBotBoard (search_tree_root)) >= bot->max_previews) {
+      (depth = getBotBoardNextQueueOffset (getNodeBotBoard (node)) - getBotBoardNextQueueOffset (getNodeBotBoard (search_tree_root))) >= bot->max_previews) {
     // addToNodeQueue (processing_queue, node);
     return NULL;
   }
@@ -313,6 +338,11 @@ static void *bot_TetrX (void *_bot) {
   Tnode_queue processing_queue = createNodeQueue ();
   addToNodeQueue (&processing_queue, search_tree);
 
+  #ifdef LOG_BOT_THINKING
+  // Setting up the log file for debugging
+  FILE *logfile = fopen (LOGFILE, "w");
+  #endif
+
   while (!getShouldEndBotFlag (bot)) {
     // Check all the flags
     if (getShouldOutputPieceFlag (bot) && getNodeAreChildrenGenerated (search_tree)  && !getNewPiecesReadyFlag (bot)) {
@@ -326,6 +356,13 @@ static void *bot_TetrX (void *_bot) {
           best_child = best_child_candidate;
         }
       }
+
+      #ifdef LOG_BOT_THINKING
+      logBestNode (logfile, best_child);
+      logVarious (logfile);
+      explored_nodes = 0;
+      #endif
+
       // Output the moves of the next piece of the best path found
       for (Tbyte i = 0; i < best_child->nb_of_moves; i++) {
         bot->next_moves[i] = best_child->moves[i];

@@ -17,7 +17,7 @@ all_gamemodes_targets = $(object_dir)singleplayer_mode.o
 all_bot_targets = $(object_dir)bot_types.o $(object_dir)tree.o $(object_dir)move_queue.o $(object_dir)node_queue.o $(object_dir)bot.o
 
 
-.PHONY: tetris_engine interface gamemodes bot clean#Declare the targets that don't correspond to files
+.PHONY: tetris_engine interface gamemodes bot clean view_log #Declare the targets that don't correspond to files
 
 interface:
 	if ! [ -d $(object_dir) ]; then mkdir $(object_dir); fi
@@ -59,6 +59,8 @@ TetrX: main_game/main.c interface tetris_engine gamemodes bot
 	if ! [ -d $(binaries_dir) ]; then mkdir $(binaries_dir); fi
 	gcc $(normal_flags) $(all_tetris_engine_targets) $(all_interface_targets) $(all_gamemodes_targets) $(all_bot_targets) $< -o $(binaries_dir)$@ $(linking_flags)
 
+view_log:
+	gnome-terminal -- tail -f bot_debug.log
 
 clean:
 	-rm bin/*
