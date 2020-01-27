@@ -171,10 +171,11 @@ static float evaluateBoard (Tbot_board *board, Tline_clear lines) {
 static void accumulateScoreIntoParents (Tnode *highest_parent, Tnode *node, float score) {
   Tnode *tmp_node = node;
   Tbyte link_level = 0;
+  setNodeAccumulatedBoardValue (tmp_node, getNodeAccumulatedBoardValue (tmp_node) + score * accumulation_weights[0]);
 
   while (tmp_node != highest_parent) {
     tmp_node = getNodeImmediateParent (tmp_node);
-    setNodeAccumulatedBoardValue (tmp_node, getNodeAccumulatedBoardValue (tmp_node) + score * accumulation_weights[0]);
+    setNodeAccumulatedBoardValue (tmp_node, getNodeAccumulatedBoardValue (tmp_node) + score * accumulation_weights[link_level]);
     link_level++;
   }
 }
@@ -320,8 +321,8 @@ static void *bot_TetrX (void *_bot) {
       float best_score = -1.0/0.0;
       for (Tbyte i = 0; i < getNodeNbOfChildren (search_tree); i++) {
         Tnode *best_child_candidate = getNodeIthChild (search_tree, i);
-        if (getNodeBoardValue (best_child_candidate) > best_score) {
-          best_score = getNodeBoardValue (best_child_candidate);
+        if (getNodeAccumulatedBoardValue (best_child_candidate) > best_score) {
+          best_score = getNodeAccumulatedBoardValue (best_child_candidate);
           best_child = best_child_candidate;
         }
       }
