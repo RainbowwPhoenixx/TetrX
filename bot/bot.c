@@ -2,8 +2,9 @@
 #include <unistd.h>
 
 #define BOT_MAX_PREVIEWS 5 // Do not set lower than 1
-float accumulation_weights[20] = {1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16, 1/17, 1/17, 1/19, 1/20};
+// float accumulation_weights[20] = {1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16, 1/17, 1/17, 1/19, 1/20};
 // float accumulation_weights[20] = {1, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256};
+float accumulation_weights[20] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
 // Accessors
 bool getShouldOutputPieceFlag (Tbot *bot) {
@@ -105,9 +106,8 @@ void setNewPiecesReadyFlag (Tbot *bot, bool new_flag) {
   bot->new_pieces_ready_flag = new_flag;
 }
 
-static float computeBumpiness (Tbot_board *board) {
-  Tcoordinate column_heights[C_MATRIX_WIDTH];
-
+static void computeHeights (Tbot_board *board, Tcoordinate *column_heights) {
+  // Computes the maximum heights for each column
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
     Tcoordinate j = C_MATRIX_HEIGHT-1;
     while (j > -1 && isMinoAtPosEmpty(getBotBoardMatrix (board), i, j)) {
@@ -115,6 +115,8 @@ static float computeBumpiness (Tbot_board *board) {
     }
     column_heights [i] = j+1;
   }
+}
+static float computeBumpiness (Tcoordinate *column_heights) {
 
   int bumpiness = 0;
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH-1; i++) {
@@ -124,34 +126,47 @@ static float computeBumpiness (Tbot_board *board) {
 
   return (float) bumpiness;
 }
-static float computeAvrgHeight (Tbot_board *board) {
+static float computeAvrgHeight (Tcoordinate *column_heights) {
   int height_sum = 0;
 
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
-    Tcoordinate j = C_MATRIX_HEIGHT-1;
-    while (j > -1 && isMinoAtPosEmpty(getBotBoardMatrix (board), i, j)) {
-      j--;
-    }
-    height_sum += j+1;
+    height_sum += column_heights [i];
   }
 
   return ((float) height_sum)/C_MATRIX_WIDTH;
 }
-static float computeMaxHeight (Tbot_board *board) {
+static float computeMaxHeight (Tcoordinate *column_heights) {
   int max_height = 0;
 
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
-    Tcoordinate j = C_MATRIX_HEIGHT-1;
-    while (j > -1 && isMinoAtPosEmpty(getBotBoardMatrix (board), i, j)) {
-      j--;
-    }
-    max_height = (j+1>max_height)?(j+1):(max_height);
+    max_height = (column_heights[i]>max_height)?(column_heights[i]):(max_height);
   }
 
   return (float) max_height;
 }
+static float computeNumberOfHoles (Tbot_board *board, Tcoordinate *column_heights) {
+  int nb_of_holes = 0;
+  for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
+    for (Tcoordinate j = 0; j < column_heights[i]; j++) {
+      if (isMinoAtPosEmpty (getBotBoardMatrix (board), i, j)) {
+        nb_of_holes++;
+      }
+    }
+  }
+  return (float) nb_of_holes;
+}
 static float evaluateBoard (Tbot_board *board, Tline_clear lines) {
-  return 10*lines*lines -10*computeMaxHeight (board) + -30*computeAvrgHeight (board) + -1*computeBumpiness (board);
+  Tcoordinate heights[C_MATRIX_WIDTH];
+  computeHeights (board, heights);
+
+  float score = 0.0;
+  score += 10*lines*lines;
+  score += -1*computeMaxHeight (heights);
+  score += -3*computeAvrgHeight (heights);
+  score += -.1*computeBumpiness (heights);
+  score += -1000*computeNumberOfHoles (board, heights);
+
+  return score;
 }
 static void accumulateScoreIntoParents (Tnode *highest_parent, Tnode *node, float score) {
   Tnode *tmp_node = node;
