@@ -2,12 +2,13 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#define BOT_MAX_PREVIEWS 5 // Do not set lower than 1
 #define LOG_BOT_THINKING
 #ifdef LOG_BOT_THINKING
 #define LOGFILE "bot_debug.log"
 #endif
 
+#define ABS(val) (((val)<0)?(-(val)):(val))
+#define BOT_MAX_PREVIEWS 10 // Do not set lower than 1
 // float accumulation_weights[20] = {1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16, 1/17, 1/17, 1/19, 1/20};
 // float accumulation_weights[20] = {1, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256};
 float accumulation_weights[20] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
@@ -181,11 +182,11 @@ static float evaluateBoard (Tbot_board *board, Tline_clear lines) {
   computeHeights (board, heights);
 
   float score = 0.0;
-  score += 10*lines*lines;
-  score += -1*computeMaxHeight (heights);
-  score += -3*computeAvrgHeight (heights);
-  score += -.1*computeBumpiness (heights);
-  score += -1000*computeNumberOfHoles (board, heights);
+  score += 2.5*lines*lines;
+  score += -1*ABS(computeMaxHeight (heights) - 6);
+  score += -7*ABS(computeAvrgHeight (heights) - 6);
+  score += -1*computeBumpiness (heights);
+  score += -100*computeNumberOfHoles (board, heights);
 
   #ifdef LOG_BOT_THINKING
   explored_nodes++;
