@@ -34,6 +34,5 @@ Switching to C is also an opportunity to :
 - Implement animations properly
 ### Bot
 - Add decent pathfinding for pieces
-- Implement multiple queues with different priorities
+- Implement multiple queues with different priorities aka better tree search
 - Implement more metrics for the evaluation function
-- Add logging
