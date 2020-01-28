@@ -196,7 +196,6 @@ static float evaluateBoard (Tbot_board *board, Tline_clear lines) {
 static void accumulateScoreIntoParents (Tnode *highest_parent, Tnode *node, float score) {
   Tnode *tmp_node = node;
   Tbyte link_level = 0;
-  setNodeAccumulatedBoardValue (tmp_node, getNodeAccumulatedBoardValue (tmp_node) + score * accumulation_weights[0]);
 
   while (tmp_node != highest_parent) {
     tmp_node = getNodeImmediateParent (tmp_node);
@@ -271,7 +270,7 @@ static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_
         setNodeNbOfChildren (node, getNodeNbOfChildren (node)+1);
         float board_score = evaluateBoard (&new_board, lines);
         setNodeBoardValue (new_node, board_score);
-        accumulateScoreIntoParents (search_tree_root, new_node, board_score);
+        setNodeAccumulatedBoardValue (new_node, board_score);
         addToNodeQueue (processing_queue, new_node);
         if (board_score > best_score) {
           best_score = board_score;
@@ -280,6 +279,7 @@ static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_
       }
     }
   }
+  accumulateScoreIntoParents (search_tree_root, best_node, best_score);
 
   return best_node;
 }
