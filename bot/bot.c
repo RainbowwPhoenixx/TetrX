@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#define LOG_BOT_THINKING
+// #define LOG_BOT_THINKING
 #ifdef LOG_BOT_THINKING
 #define LOGFILE "bot_debug.log"
 #endif
