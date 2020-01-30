@@ -414,6 +414,11 @@ static void *bot_TetrX (void *_bot) {
     // Generate the moves, compute their value, and put them in the queue
   }
 
+  #ifdef LOG_BOT_THINKING
+  // Setting up the log file for debugging
+  fclose (logfile);
+  #endif
+
   // Free the memory
   freeNodeQueue (&processing_queue);
   freeNode (search_tree);
