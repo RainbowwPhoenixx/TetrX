@@ -60,14 +60,29 @@ void setNodeChildID (Tnode *node, unsigned short new_val){
   node->child_id = new_val;
 }
 
+Tnode *getNodeImmediateParent (Tnode* node) {
+  return node->immediate_parent;
+}
+void setNodeImmediateParent (Tnode *node, Tnode *parent) {
+  node->immediate_parent = parent;
+}
 
-Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves) {
+float getNodeAccumulatedBoardValue (Tnode *node) {
+  return node->accumulated_board_value;
+}
+void setNodeAccumulatedBoardValue (Tnode *node, float new_acc_value) {
+  node->accumulated_board_value = new_acc_value;
+}
+
+
+Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves, Tnode *parent) {
   Tnode *tree = calloc (1, sizeof(Tnode));
 
   setNodeBotBoard (tree, board);
   setNodeNbOfMoves (tree, nb_of_moves);
   setNodeAreChildrenGenerated (tree, false);
   setNodeNbOfChildren (tree, 0);
+  setNodeImmediateParent (tree, parent);
 
   for (int i = 0; i < nb_of_moves; i++) {
     setNodeIthMove (tree, i,  moves[i]);

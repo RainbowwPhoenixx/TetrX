@@ -1,5 +1,17 @@
 #include "bot.h"
 #include <unistd.h>
+#include <stdio.h>
+
+// #define LOG_BOT_THINKING
+#ifdef LOG_BOT_THINKING
+#define LOGFILE "bot_debug.log"
+#endif
+
+#define ABS(val) (((val)<0)?(-(val)):(val))
+#define BOT_MAX_PREVIEWS 10 // Do not set lower than 1
+// float accumulation_weights[20] = {1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16, 1/17, 1/17, 1/19, 1/20};
+// float accumulation_weights[20] = {1, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256};
+float accumulation_weights[20] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
 // Accessors
 bool getShouldOutputPieceFlag (Tbot *bot) {
@@ -101,9 +113,23 @@ void setNewPiecesReadyFlag (Tbot *bot, bool new_flag) {
   bot->new_pieces_ready_flag = new_flag;
 }
 
-static float computeBumpiness (Tbot_board *board) {
-  Tcoordinate column_heights[C_MATRIX_WIDTH];
+Tbyte depth = 0;
+#ifdef LOG_BOT_THINKING
+// Debug functions
+int explored_nodes = 0;
+void logBestNode (FILE *logfile, Tnode *node) {
+  fprintf(logfile, "Chosen node had a score of : %12.2f\n", getNodeAccumulatedBoardValue (node));
+  fflush (logfile);
+}
+void logVarious (FILE *logfile) {
+  fprintf(logfile, "Thinking depth : %d\n", depth);
+  fprintf(logfile, "Explored nodes : %d\n", explored_nodes);
+  fflush (logfile);
+}
+#endif
 
+static void computeHeights (Tbot_board *board, Tcoordinate *column_heights) {
+  // Computes the maximum heights for each column
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
     Tcoordinate j = C_MATRIX_HEIGHT-1;
     while (j > -1 && isMinoAtPosEmpty(getBotBoardMatrix (board), i, j)) {
@@ -111,6 +137,8 @@ static float computeBumpiness (Tbot_board *board) {
     }
     column_heights [i] = j+1;
   }
+}
+static float computeBumpiness (Tcoordinate *column_heights) {
 
   int bumpiness = 0;
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH-1; i++) {
@@ -120,41 +148,79 @@ static float computeBumpiness (Tbot_board *board) {
 
   return (float) bumpiness;
 }
-static float computeAvrgHeight (Tbot_board *board) {
+static float computeAvrgHeight (Tcoordinate *column_heights) {
   int height_sum = 0;
 
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
-    Tcoordinate j = C_MATRIX_HEIGHT-1;
-    while (j > -1 && isMinoAtPosEmpty(getBotBoardMatrix (board), i, j)) {
-      j--;
-    }
-    height_sum += j+1;
+    height_sum += column_heights [i];
   }
 
   return ((float) height_sum)/C_MATRIX_WIDTH;
 }
-static float computeMaxHeight (Tbot_board *board) {
+static float computeMaxHeight (Tcoordinate *column_heights) {
   int max_height = 0;
 
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
-    Tcoordinate j = C_MATRIX_HEIGHT-1;
-    while (j > -1 && isMinoAtPosEmpty(getBotBoardMatrix (board), i, j)) {
-      j--;
-    }
-    max_height = (j+1>max_height)?(j+1):(max_height);
+    max_height = (column_heights[i]>max_height)?(column_heights[i]):(max_height);
   }
 
   return (float) max_height;
 }
-static float evaluateBoard (Tbot_board *board) {
-  return 1/(10*computeMaxHeight (board) + 30*computeAvrgHeight (board) + 1*computeBumpiness (board));
+static float computeNumberOfHoles (Tbot_board *board, Tcoordinate *column_heights) {
+  int nb_of_holes = 0;
+  for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
+    for (Tcoordinate j = 0; j < column_heights[i]; j++) {
+      if (isMinoAtPosEmpty (getBotBoardMatrix (board), i, j)) {
+        nb_of_holes++;
+      }
+    }
+  }
+  return (float) nb_of_holes;
 }
-static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
+static float evaluateBoard (Tbot_board *board, Tline_clear lines) {
+  Tcoordinate heights[C_MATRIX_WIDTH];
+  computeHeights (board, heights);
+
+  float score = 0.0;
+  score += 2.5*lines*lines;
+  score += -1*ABS(computeMaxHeight (heights) - 6);
+  score += -7*ABS(computeAvrgHeight (heights) - 6);
+  score += -1*computeBumpiness (heights);
+  score += -100*computeNumberOfHoles (board, heights);
+
+  #ifdef LOG_BOT_THINKING
+  explored_nodes++;
+  #endif
+
+  return score;
+}
+static void accumulateScoreIntoParents (Tnode *highest_parent, Tnode *node, float score) {
+  Tnode *tmp_node = node;
+  Tbyte link_level = 0;
+
+  while (tmp_node != highest_parent) {
+    tmp_node = getNodeImmediateParent (tmp_node);
+    setNodeAccumulatedBoardValue (tmp_node, getNodeAccumulatedBoardValue (tmp_node) + score * accumulation_weights[link_level]);
+    link_level++;
+  }
+}
+static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_queue, Tnode_queue *processing_queue) {
   // Generate the possible moves from the given node, and assign them a score
   // Return the best generated node
   // Returns NULL if children were already generated
 
+  Tnode *node = getFromNodeQueue (processing_queue);
+  // If max previews is reached, don't compute
+  if (node == NULL ||
+      (depth = getBotBoardNextQueueOffset (getNodeBotBoard (node)) - getBotBoardNextQueueOffset (getNodeBotBoard (search_tree_root))) >= bot->max_previews) {
+    // addToNodeQueue (processing_queue, node);
+    return NULL;
+  }
+
   if (getNodeAreChildrenGenerated (node)) {
+    for (unsigned short i = 0; i < getNodeNbOfChildren (node); i++) {
+      addToNodeQueue (processing_queue, getNodeIthChild (node, i));
+    }
     return NULL;
   }
   setNodeAreChildrenGenerated (node, true);
@@ -198,13 +264,15 @@ static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
         }
 
         botLockActiveTetrimino (&new_board);
-        botClearLines (&new_board);
+        Tline_clear lines = botClearLines (&new_board);
 
-        Tnode *new_node = createNode (new_board, nb_of_moves, moves);
+        Tnode *new_node = createNode (new_board, nb_of_moves, moves, node);
         setNodeIthChild (node, getNodeNbOfChildren (node), new_node);
         setNodeNbOfChildren (node, getNodeNbOfChildren (node)+1);
-        float board_score = evaluateBoard (&new_board);
+        float board_score = evaluateBoard (&new_board, lines);
         setNodeBoardValue (new_node, board_score);
+        setNodeAccumulatedBoardValue (new_node, board_score);
+        addToNodeQueue (processing_queue, new_node);
         if (board_score > best_score) {
           best_score = board_score;
           best_node = new_node;
@@ -212,11 +280,12 @@ static Tnode *expandNode (Tbot *bot, Tnode *node, Tnext_queue *next_queue) {
       }
     }
   }
+  accumulateScoreIntoParents (search_tree_root, best_node, best_score);
 
   return best_node;
 }
 
-// Thinking function
+// Various processing functions
 static void translate_moves (Tmovement *moves, Tbyte *nb_of_moves) {
   // Translate moves from the bot's thinking to the game's thinking
 
@@ -238,39 +307,96 @@ static void translate_moves (Tmovement *moves, Tbyte *nb_of_moves) {
     }
   }
 }
+static Tnode *getRootDirectChildLink (Tnode *root, Tnode *node) {
+  // Goes up the parent chain of 'node' until it gets to 'root'
+  // Allows to get the immediate next movement from a best child
+  // several levels down.
+
+  Tnode *tmp_node = node;
+
+  while (getNodeImmediateParent (tmp_node) != root) {
+    tmp_node = getNodeImmediateParent (tmp_node);
+  }
+
+  return tmp_node;
+}
+static void reduceNextPieceOffset (Tnode *node) {
+  // Recursive function to reduce the next piece offset by one when the thinking for the next piece starts
+  if (node) {
+    for (unsigned short i = 0; i < getNodeNbOfChildren (node); i++) {
+      reduceNextPieceOffset (getNodeIthChild (node, i));
+    }
+
+    setBotBoardNextQueueOffset (getNodeBotBoard (node), getBotBoardNextQueueOffset (getNodeBotBoard (node))-1);
+  }
+}
+// Bot main loop
 static void *bot_TetrX (void *_bot) {
   Tbot *bot = (Tbot*) _bot;
-  Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL);
+  Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
   Tnext_queue global_next_queue = createNextQueue ();
   copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
-  Tnode *best_node = NULL;
+  Tnode_queue processing_queue = createNodeQueue ();
+  addToNodeQueue (&processing_queue, search_tree);
+
+  #ifdef LOG_BOT_THINKING
+  // Setting up the log file for debugging
+  FILE *logfile = fopen (LOGFILE, "w");
+  #endif
 
   while (!getShouldEndBotFlag (bot)) {
     // Check all the flags
-    if (getShouldOutputPieceFlag (bot) && best_node  && !getNewPiecesReadyFlag (bot)) {
-      // Output the moves of the next piece of the best path found
-      for (Tbyte i = 0; i < best_node->nb_of_moves; i++) {
-        bot->next_moves[i] = best_node->moves[i];
+    if (getShouldOutputPieceFlag (bot) && getNodeAreChildrenGenerated (search_tree)  && !getNewPiecesReadyFlag (bot)) {
+      // Get the best immediate child
+      Tnode *best_child;
+      float best_score = -1.0/0.0;
+      for (Tbyte i = 0; i < getNodeNbOfChildren (search_tree); i++) {
+        Tnode *best_child_candidate = getNodeIthChild (search_tree, i);
+        if (getNodeAccumulatedBoardValue (best_child_candidate) > best_score) {
+          best_score = getNodeAccumulatedBoardValue (best_child_candidate);
+          best_child = best_child_candidate;
+        }
       }
-      bot->next_moves_length = best_node->nb_of_moves;
+
+      #ifdef LOG_BOT_THINKING
+      logBestNode (logfile, best_child);
+      logVarious (logfile);
+      explored_nodes = 0;
+      #endif
+
+      // Output the moves of the next piece of the best path found
+      for (Tbyte i = 0; i < best_child->nb_of_moves; i++) {
+        bot->next_moves[i] = best_child->moves[i];
+      }
+      bot->next_moves_length = best_child->nb_of_moves;
       translate_moves (bot->next_moves, &bot->next_moves_length);
       // Signal that the next piece is ready.
       setOutputPieceReadyFlag (bot, true);
       // Reset the flag
       setShouldOutputPieceFlag (bot, false);
       // Advance to think on the next board state
-      setNodeIthChild (search_tree, getNodeChildID (best_node), NULL);
+      setNodeIthChild (search_tree, getNodeChildID (best_child), NULL);
       freeNode (search_tree);
-      search_tree = best_node;
-      best_node = NULL;
+      search_tree = best_child;
       advanceNextQueue (&global_next_queue);
-      setBotBoardNextQueueOffset (getNodeBotBoard (search_tree), getBotBoardNextQueueOffset (getNodeBotBoard (search_tree))-1);
+      reduceNextPieceOffset (search_tree);
+      // Resetting the queue
+      freeNodeQueue (&processing_queue);
+      processing_queue = createNodeQueue ();
+      addToNodeQueue (&processing_queue, search_tree);
     }
     if (getShouldResetSearchFlag (bot)) {
       // Free the current search tree
-      // Reset the queue
-      // Regenerate the first node
+      freeNode (search_tree);
+      // Get the new values
+      search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
+      copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
+      // Reset the processing queue
+      freeNodeQueue (&processing_queue);
+      processing_queue = createNodeQueue ();
+      addToNodeQueue (&processing_queue, search_tree);
       // Reset the flag
+      setShouldResetSearchFlag (bot, false);
     }
     if (getNewPiecesReadyFlag (bot)) {
       Tbyte queue_length = getNextQueueLength (&bot->new_pieces);
@@ -282,17 +408,19 @@ static void *bot_TetrX (void *_bot) {
     }
 
     // Do the thinking
-    Tnode *best_node_candidate = expandNode (bot, search_tree, &global_next_queue);
-    if (best_node_candidate != NULL) {
-      best_node = best_node_candidate;
-    } else {
+    if (expandNode (bot, search_tree, &global_next_queue, &processing_queue) == NULL) {
       usleep (1000);
     }
-
     // Generate the moves, compute their value, and put them in the queue
   }
 
+  #ifdef LOG_BOT_THINKING
+  // Setting up the log file for debugging
+  fclose (logfile);
+  #endif
+
   // Free the memory
+  freeNodeQueue (&processing_queue);
   freeNode (search_tree);
 
   return NULL;
@@ -307,6 +435,7 @@ static void startBot (Tbot *bot, Tboard board) {
   bot->should_reset_search_flag = false;
   bot->should_end_bot_flag = false;
   bot->new_pieces_ready_flag = false;
+  bot->max_previews = BOT_MAX_PREVIEWS;
 
   // Init the mutexes
   // pthread_mutexattr_t attr;
