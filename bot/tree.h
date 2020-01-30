@@ -24,11 +24,12 @@ typedef struct _Tnode {
   unsigned short nb_of_children;
   struct _Tnode* children[MAX_CHILDREN];
   bool are_children_generated;
+  float accumulated_board_value;
+  unsigned short number_of_accumulations;
 
   // Parent related variables
   unsigned short child_id;
   struct _Tnode *immediate_parent;
-  float accumulated_board_value;
 } Tnode;
 
 // Accessors
@@ -53,14 +54,17 @@ void setNodeIthChild (Tnode *node, unsigned short i, Tnode *new_child);
 bool getNodeAreChildrenGenerated (Tnode *node);
 void setNodeAreChildrenGenerated (Tnode *node, bool new_val);
 
+float getNodeAccumulatedBoardValue (Tnode *node);
+void setNodeAccumulatedBoardValue (Tnode *node, float new_acc_value);
+
+unsigned int getNodeNbOfAccumulations (Tnode *node);
+void increaseNodeNbOfAccumulations (Tnode *node);
+
 unsigned short getNodeChildID (Tnode *node);
 void setNodeChildID (Tnode *node, unsigned short new_val);
 
 Tnode *getNodeImmediateParent (Tnode* node);
 void setNodeImmediateParent (Tnode *node, Tnode *parent);
-
-float getNodeAccumulatedBoardValue (Tnode *node);
-void setNodeAccumulatedBoardValue (Tnode *node, float new_acc_value);
 
 // Constructor & destructor
 Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves, Tnode *parent);

@@ -53,6 +53,21 @@ void setNodeAreChildrenGenerated (Tnode *node, bool new_val) {
   node->are_children_generated = new_val;
 }
 
+float getNodeAccumulatedBoardValue (Tnode *node) {
+  return node->accumulated_board_value;
+}
+void setNodeAccumulatedBoardValue (Tnode *node, float new_acc_value) {
+  node->accumulated_board_value = new_acc_value;
+  increaseNodeNbOfAccumulations (node);
+}
+
+unsigned int getNodeNbOfAccumulations (Tnode *node) {
+  return node->number_of_accumulations;
+}
+void increaseNodeNbOfAccumulations (Tnode *node) {
+  node->number_of_accumulations++;
+}
+
 unsigned short getNodeChildID (Tnode *node) {
   return node->child_id;
 }
@@ -67,13 +82,6 @@ void setNodeImmediateParent (Tnode *node, Tnode *parent) {
   node->immediate_parent = parent;
 }
 
-float getNodeAccumulatedBoardValue (Tnode *node) {
-  return node->accumulated_board_value;
-}
-void setNodeAccumulatedBoardValue (Tnode *node, float new_acc_value) {
-  node->accumulated_board_value = new_acc_value;
-}
-
 
 Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves, Tnode *parent) {
   Tnode *tree = calloc (1, sizeof(Tnode));
@@ -81,6 +89,7 @@ Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves, Tnode 
   setNodeBotBoard (tree, board);
   setNodeNbOfMoves (tree, nb_of_moves);
   setNodeAreChildrenGenerated (tree, false);
+  tree->number_of_accumulations = 0;
   setNodeNbOfChildren (tree, 0);
   setNodeImmediateParent (tree, parent);
 
