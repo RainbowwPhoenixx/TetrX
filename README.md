@@ -20,6 +20,7 @@ Switching to C is also an opportunity to :
 - Make the ncurses library be linked statically for compatibility with computers where ncurses is not installed
 - Make SDL be linked statically for the same reason
 - Read the different options from a text file at runtime
+- Separate game & bot data structs more
 ### Game
 - Make a versus mode
 - Implement gravity
@@ -33,6 +34,8 @@ Switching to C is also an opportunity to :
 - Create a graphical interface
 - Implement animations properly
 ### Bot
-- Add decent pathfinding for pieces
+- Change botBoard implementation to an array of words
+- General type overhaul
+- Add Sonic drop to pathfinder & better HD handling
 - Implement multiple queues with different priorities aka better tree search
 - Implement more metrics for the evaluation function
