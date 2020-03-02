@@ -37,4 +37,29 @@ void botLockActiveTetrimino (Tbot_board *b);
 bool isBotBoardStateValid (Tbot_board *b);
 void botApplyInput (Tbot_board *b, Tnext_queue *next_queue, Tmovement mv);
 
+
+// --------------------------------------------------------------------------
+//                        PATHFINDING STUFF
+// --------------------------------------------------------------------------
+
+typedef struct _TMoveNode {
+  Tmovement move;
+  Ttetrimino tetrimino;
+  float dist; // = time taken to get there
+  struct _TMoveNode* best_parent;
+} TMoveNode;
+
+typedef struct { // Change to heap implementation later for optimization
+  unsigned int size;
+  TMoveNode* items[1000];
+} TMoveNodeList;
+
+TMoveNode* createMoveNode (Tmovement move, Ttetrimino* tetrimino, float distance, TMoveNode* parent);
+void destroyMoveNode (TMoveNode *node);
+
+void addMoveNodeToList (TMoveNode* mvnode, TMoveNodeList* list);
+TMoveNode* popMinMoveNodeFromList (TMoveNodeList *list);
+
+bool isNotObstacle (Tbot_board* b, Ttetrimino* t);
+
 #endif /* end of include guard: __BOT_TYPES_H__ */

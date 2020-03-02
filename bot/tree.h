@@ -7,8 +7,8 @@
 #include <stdlib.h>
 
 // Definition of the search tree used by the bot
-#define MAX_MOVEMENTS 15
-#define MAX_CHILDREN 100
+#define MAX_MOVEMENTS 50
+#define MAX_CHILDREN 200
 
 typedef struct _Tnode {
   // A node contains the state of the board, with the active piece

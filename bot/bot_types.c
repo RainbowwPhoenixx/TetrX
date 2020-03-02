@@ -1,4 +1,5 @@
 #include "bot_types.h"
+#include <stdlib.h>
 
 // Accessors
 Tmatrix *getBotBoardMatrix (Tbot_board *board) {
@@ -312,4 +313,89 @@ void botApplyInput (Tbot_board *b, Tnext_queue *next_queue, Tmovement mv) {
   if (isMovementInWord (&mv, MV_SD   )) botPerformSoftDrop (b);
   if (isMovementInWord (&mv, MV_HD   )) botPerformHardDrop (b);
   if (isMovementInWord (&mv, MV_HOLD )) botPerformHold (b, next_queue);
+}
+
+// --------------------------------------------------------------------------
+//                        PATHFINDING STUFF
+// --------------------------------------------------------------------------
+
+TMoveNode* createMoveNode (Tmovement move, Ttetrimino* tetrimino, float distance, TMoveNode* parent) {
+  TMoveNode* node = (TMoveNode*) malloc (sizeof(TMoveNode));
+
+  node->move = move;
+  copyTetrimino (&(node->tetrimino), tetrimino);
+  node->dist = distance;
+  node->best_parent = parent;
+
+  return node;
+}
+void destroyMoveNode (TMoveNode *node) {
+  free (node);
+}
+
+void addMoveNodeToList (TMoveNode* mvnode, TMoveNodeList* list) {
+  list->items[list->size] = mvnode;
+  list->size++;
+}
+TMoveNode* popMinMoveNodeFromList (TMoveNodeList *list) {
+  // Removes and returns the node with smallest distance from start
+  // Returns NULL is queue is empty
+
+  if (list->size == 0) {
+    return NULL;
+  }
+
+  float min = 1.0/0.0; // Distances start from 0
+  TMoveNode* min_node;
+  unsigned int min_i;
+
+  for (unsigned int i = 0; i < list->size; i++) {
+    TMoveNode* min_candidate = list->items[i];
+    if (min_candidate->dist < min) {
+      min = min_candidate->dist;
+      min_node = min_candidate;
+      min_i = i;
+    }
+  }
+
+  for (unsigned int i = min_i; i < list->size; i++) {
+    list->items[i] = list->items[i+1];
+  }
+  list->size--;
+
+  return min_node;
+}
+
+bool isNotObstacle (Tbot_board* b, Ttetrimino* t) {
+  // Checks that the position of the active tetrimino is valid in relation to the matrix.
+  // Returns true is the board is valid, false if not. (Variation of isBotBoardStateValid for pathfinding)
+
+  int i = 0;
+  bool res = true;
+  // For each mino
+  do {
+    Tmino *tmp_mino = getIthMino (t, i);
+    Tcoordinate tmp_x = getTetriminoX (t) + getMinoXDiff (tmp_mino);
+    Tcoordinate tmp_y = getTetriminoY (t) + getMinoYDiff (tmp_mino);
+
+    // Check that the mino is inside of the matrix
+    if (   tmp_x >= C_MATRIX_WIDTH
+        || tmp_x < 0
+        || tmp_y < 0) {
+
+      res = false;
+    }
+
+    // Check that the mino does not intersect with minos on the board
+    if (res) {
+      Tmatrix *tmp_m = getBotBoardMatrix(b);
+      if (!isMinoAtPosEmpty (tmp_m, tmp_x, tmp_y)) {
+        res = false;
+      }
+    }
+
+    i++;
+  } while ((i < NUMBER_OF_MINOS) && res);
+
+  return res;
 }

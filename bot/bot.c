@@ -7,6 +7,8 @@
 #define LOGFILE "bot_debug.log"
 #endif
 
+#define BOT_MAX_MOVES 50
+
 #define ABS(val) (((val)<0)?(-(val)):(val))
 #define BOT_MAX_PREVIEWS 3 // Do not set lower than 1
 // float accumulation_weights[20] = {1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16, 1/17, 1/17, 1/19, 1/20};
@@ -181,6 +183,8 @@ static float evaluateBoard (Tbot_board *board, Tline_clear lines) {
   Tcoordinate heights[C_MATRIX_WIDTH];
   computeHeights (board, heights);
 
+  // Potential future criteria : time, swag, damage, damage/line, death
+
   float score = 0.0;
   score += 2.5*lines*lines;
   score += -1*ABS(computeMaxHeight (heights) - 6);
@@ -204,6 +208,183 @@ static void accumulateScoreIntoParents (Tnode *highest_parent, Tnode *node, floa
     link_level++;
   }
 }
+static Tnode *addNode(Tnode *parent, Tmovement *moves, Tbyte nb_of_moves, Tnext_queue *next_queue) {
+  // Computes the board state of the given seqeunce of movements, computes its score, and adds it as a node
+  // Returns a pointer to the created node
+
+  // Create node with the moves applied
+  Tbot_board new_board;
+  copyBotBoard (&new_board, getNodeBotBoard (parent));
+  botPopTetriminoFromQueue (&new_board, next_queue);
+  for (Tbyte j = 0; j < nb_of_moves; j++) {
+    botApplyInput (&new_board, next_queue, moves[j]);
+  }
+  botLockActiveTetrimino (&new_board);
+  Tline_clear lines = botClearLines (&new_board);
+  Tnode *new_node = createNode (new_board, nb_of_moves, moves, parent);
+
+  // Add new node to the search tree, compute score, and update parent data
+  setNodeIthChild (parent, getNodeNbOfChildren (parent), new_node);
+  setNodeNbOfChildren (parent, getNodeNbOfChildren (parent)+1);
+  float board_score = evaluateBoard (&new_board, lines);
+  setNodeBoardValue (new_node, board_score);
+  setNodeAccumulatedBoardValue (new_node, board_score);
+
+  return new_node;
+}
+static bool isRestingOnBlock (Tbot_board *board, Ttetrimino* t) {
+  // Returns true if the position can be a final position
+  // (aka if the tetrimino is resting on a block)
+
+  bool res = false;
+  Tbyte i = 0;
+
+  while (i < 4 && !res) {
+    Tmino *tmp_mino = getIthMino (t, i);
+    Tcoordinate tmp_x = getTetriminoX (t) + getMinoXDiff (tmp_mino);
+    Tcoordinate tmp_y = getTetriminoY (t) + getMinoYDiff (tmp_mino);
+    // Mino touches the ground, or there is a mino below it on the matrix
+    res = (tmp_y == 0) || !isMinoAtPosEmpty (getBotBoardMatrix (board), tmp_x, tmp_y - 1);
+    i++;
+  }
+
+  return res;
+}
+static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *next_queue, Tnode_queue *processing_queue, bool should_insert_hold_move) {
+  // Generates all the possible moves form the given board state and adds them to the queue
+  // Returns the best node found
+  // Current implementation : Dijkstra
+
+  // Possible optimizations :
+  // - Reduce matrix height because you can't actually pathfind up
+
+  float best_score = -1.0/0.0; // Init to -infty
+  Tnode *best_final_node;
+
+  // Move set that the pathfinder can use & durantion estimates for them
+  Tbyte move_set_size = 5;
+  Tmovement move_set[] = {MV_LEFT, MV_RIGHT, MV_CW, MV_CCW, MV_SD};
+  Tbyte move_distances[] = {2, 2, 2, 2, 2};
+
+  // Node currently being examined
+  TMoveNode* current;
+  // Array used to keep track of which spots have been visited
+  // visited [tetrimino_x][tetrimino_y][Rotation state]
+  #define NB_OF_ROTATIONS 4
+  #define VISITED_WIDTH C_MATRIX_WIDTH+1
+  bool visited [VISITED_WIDTH][C_MATRIX_HEIGHT][NB_OF_ROTATIONS];
+  // Array used to know which node corresponds to which spot
+  TMoveNode* known_nodes[VISITED_WIDTH][C_MATRIX_HEIGHT][NB_OF_ROTATIONS];
+  // List of unvisited nodes
+  TMoveNodeList unvisited_move_nodes = {.size = 0};
+  // List of final nodes ?
+
+  // Set all visited to false and all known to NULL (is it necessary ?)
+  for (Tcoordinate x = 0; x < VISITED_WIDTH; x++) {
+    for (Tcoordinate y = 0; y < C_MATRIX_HEIGHT; y++) {
+      for (Tbyte r = 0; r < NB_OF_ROTATIONS; r++) {
+        visited[x][y][r] = false;
+        known_nodes[x][y][r] = NULL;
+      }
+    }
+  }
+
+  // Convert start node and set dist to 0
+  Ttetrimino tmp_tet = createTetrimino (getTetriminoShape(getBotBoardActiveTetrimino(board_state)));
+  TMoveNode *start_node = createMoveNode (0, &tmp_tet, 0, NULL);
+  addMoveNodeToList (start_node, &unvisited_move_nodes);
+  known_nodes[getTetriminoX (&tmp_tet)+1][getTetriminoY (&tmp_tet)][ getTetriminoRotationState (&tmp_tet)] = start_node;
+
+  while ((current = popMinMoveNodeFromList (&unvisited_move_nodes))) {
+    // Consider/generate all unvisited neighbours and set their dist
+    for (Tbyte i = 0; i < move_set_size; i++) {
+      TMoveNode* potential_new_neighbour = createMoveNode (move_set[i], &(current->tetrimino), current->dist + move_distances[i], current);
+      Ttetrimino* new_tetrimino = &(potential_new_neighbour->tetrimino);
+      switch (move_set[i]) {
+        case MV_LEFT:
+          moveTetriminoLeft (new_tetrimino);
+        break;
+        case MV_RIGHT:
+          moveTetriminoRight (new_tetrimino);
+        break;
+        case MV_CW:
+          moveTetriminoCW (new_tetrimino);
+        break;
+        case MV_CCW:
+          moveTetriminoCCW (new_tetrimino);
+        break;
+        case MV_SD:
+          moveTetriminoDown (new_tetrimino);
+        break;
+      }
+      // If node is not visited & is not an obstacle
+      if (isNotObstacle (board_state, new_tetrimino)
+          && !visited[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)]) {
+        // If node is not known, create it, else compare distances and set the shortest
+        TMoveNode* neighbour = known_nodes[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)];
+        if (!neighbour) {
+          neighbour = potential_new_neighbour;
+          known_nodes[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)] = neighbour;
+          addMoveNodeToList (neighbour, &unvisited_move_nodes);
+        } else {
+          if (potential_new_neighbour->dist < neighbour->dist) {
+            neighbour->dist = potential_new_neighbour->dist;
+            neighbour->best_parent = current;
+          }
+          destroyMoveNode (potential_new_neighbour);
+        }
+      } else {destroyMoveNode (potential_new_neighbour);}
+    }
+    // Mark the current node as visited
+    visited[getTetriminoX (&(current->tetrimino))+1][getTetriminoY (&(current->tetrimino))][getTetriminoRotationState (&(current->tetrimino))] = true;
+    // Add as a tree node if position is final
+    if (isRestingOnBlock (board_state, &(current->tetrimino))) {
+      // Get path taken to get there
+      Tbyte nb_of_moves = 0;
+      Tmovement reverse_moves[BOT_MAX_MOVES];
+      TMoveNode* current_path_backtrack = current;
+
+      do {
+        reverse_moves[nb_of_moves] = current_path_backtrack->move;
+        nb_of_moves++;
+      } while((current_path_backtrack = current_path_backtrack->best_parent));
+
+      if (should_insert_hold_move) {
+        reverse_moves[nb_of_moves] = MV_HOLD;
+        nb_of_moves++;
+      }
+
+      Tmovement moves[BOT_MAX_MOVES];
+      for (Tbyte j = 0; j < nb_of_moves; j++) {
+        moves[j] = reverse_moves[nb_of_moves -j-1];
+      }
+      moves[nb_of_moves] = MV_HD;
+      nb_of_moves++;
+
+      Tnode *new_node = addNode (parent, moves, nb_of_moves, next_queue);
+      addToNodeQueue (processing_queue, new_node);
+      if (getNodeBoardValue (new_node) > best_score) {
+        best_score = getNodeBoardValue (new_node);
+        best_final_node = new_node;
+      }
+    }
+    // Stop if necessary (queue is empty)
+    // Repeat with a new node
+  }
+
+  // Free all the move nodes
+  for (Tcoordinate x = 0; x < VISITED_WIDTH; x++) {
+    for (Tcoordinate y = 0; y < C_MATRIX_HEIGHT; y++) {
+      for (Tbyte r = 0; r < NB_OF_ROTATIONS; r++) {
+        if (known_nodes[x][y][r]) {
+          destroyMoveNode (known_nodes[x][y][r]);
+        }
+      }
+    }
+  }
+
+  return best_final_node;
+}
 static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_queue, Tnode_queue *processing_queue) {
   // Generate the possible moves from the given node, and assign them a score
   // Return the best generated node
@@ -225,62 +406,14 @@ static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_
   }
   setNodeAreChildrenGenerated (node, true);
 
-  float best_score = -1.0/0.0; // Init to -infty
-  Tnode *best_node;
-  Tmovement moves[15];
-  Tbyte nb_of_moves = 0;
-
-  for (Tbyte hold = 0; hold < 2; hold++) {
-    for (Tbyte rot = 0; rot < 4; rot++) {
-      for (int i = -4; i < 6; i++) {
-        nb_of_moves = 0;
-        if (hold) {
-          moves[nb_of_moves] = MV_HOLD;
-          nb_of_moves++;
-        }
-        for (Tbyte j = 0; j < rot; j++) {
-          moves[nb_of_moves] = MV_CW;
-          nb_of_moves++;
-        }
-        if (i<0) {
-          for (Tbyte j = 0; j < -i; j++) {
-            moves[nb_of_moves] = MV_LEFT;
-            nb_of_moves++;
-          }
-        } else if (i>0) {
-          for (Tbyte j = 0; j < i; j++) {
-            moves[nb_of_moves] = MV_RIGHT;
-            nb_of_moves++;
-          }
-        }
-        moves[nb_of_moves] = MV_HD;
-        nb_of_moves++;
-
-        Tbot_board new_board;
-        copyBotBoard (&new_board, getNodeBotBoard (node));
-        botPopTetriminoFromQueue (&new_board, next_queue);
-        for (Tbyte j = 0; j < nb_of_moves; j++) {
-          botApplyInput (&new_board, next_queue, moves[j]);
-        }
-
-        botLockActiveTetrimino (&new_board);
-        Tline_clear lines = botClearLines (&new_board);
-
-        Tnode *new_node = createNode (new_board, nb_of_moves, moves, node);
-        setNodeIthChild (node, getNodeNbOfChildren (node), new_node);
-        setNodeNbOfChildren (node, getNodeNbOfChildren (node)+1);
-        float board_score = evaluateBoard (&new_board, lines);
-        setNodeBoardValue (new_node, board_score);
-        setNodeAccumulatedBoardValue (new_node, board_score);
-        addToNodeQueue (processing_queue, new_node);
-        if (board_score > best_score) {
-          best_score = board_score;
-          best_node = new_node;
-        }
-      }
-    }
-  }
-  accumulateScoreIntoParents (search_tree_root, best_node, best_score);
+  Tbot_board tmp_board;
+  copyBotBoard (&tmp_board, getNodeBotBoard (node));
+  botPopTetriminoFromQueue (&tmp_board, next_queue);
+  Tnode *best_node = generateMoves (node, &tmp_board, next_queue, processing_queue, false);
+  botApplyInput (&tmp_board, next_queue, MV_HOLD);
+  Tnode *best_node2 =  generateMoves (node, &tmp_board, next_queue, processing_queue, true);
+  best_node = (best_node>best_node2)?(best_node):(best_node2);
+  accumulateScoreIntoParents (search_tree_root, best_node, getNodeBoardValue (best_node));
 
   return best_node;
 }
@@ -306,19 +439,6 @@ static void translate_moves (Tmovement *moves, Tbyte *nb_of_moves) {
       (*nb_of_moves)++;
     }
   }
-}
-static Tnode *getRootDirectChildLink (Tnode *root, Tnode *node) {
-  // Goes up the parent chain of 'node' until it gets to 'root'
-  // Allows to get the immediate next movement from a best child
-  // several levels down.
-
-  Tnode *tmp_node = node;
-
-  while (getNodeImmediateParent (tmp_node) != root) {
-    tmp_node = getNodeImmediateParent (tmp_node);
-  }
-
-  return tmp_node;
 }
 static void reduceNextPieceOffset (Tnode *node) {
   // Recursive function to reduce the next piece offset by one when the thinking for the next piece starts

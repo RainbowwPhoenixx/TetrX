@@ -6,7 +6,7 @@
 
 #define DAS_VALUE 10
 #define ARR_VALUE 1
-#define SD_ARR_VALUE 1
+#define SD_ARR_VALUE 0
 
 // Kick for the different pieces [rotation_state][kick_index][x or y]
 static Tcoordinate_diff not_I_kicks[4][5][2] = {
