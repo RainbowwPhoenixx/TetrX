@@ -132,9 +132,9 @@ void logVarious (FILE *logfile) {
 
 static void computeHeights (Tbot_board *board, Tcoordinate *column_heights) {
   // Computes the maximum heights for each column
-  for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
-    Tcoordinate j = C_MATRIX_HEIGHT-1;
-    while (j > -1 && isMinoAtPosEmpty(getBotBoardMatrix (board), i, j)) {
+  for (Tcoordinate i = 0; i < BOT_MATRIX_WIDTH; i++) {
+    Tcoordinate j = BOT_MATRIX_HEIGHT-1;
+    while ((j > -1) && !getBotMatrixCellFilledState (getBotBoardMatrix (board), i, j)) {
       j--;
     }
     column_heights [i] = j+1;
@@ -172,7 +172,7 @@ static float computeNumberOfHoles (Tbot_board *board, Tcoordinate *column_height
   int nb_of_holes = 0;
   for (Tcoordinate i = 0; i < C_MATRIX_WIDTH; i++) {
     for (Tcoordinate j = 0; j < column_heights[i]; j++) {
-      if (isMinoAtPosEmpty (getBotBoardMatrix (board), i, j)) {
+      if (!getBotMatrixCellFilledState (getBotBoardMatrix (board), i, j)) {
         nb_of_holes++;
       }
     }
@@ -244,7 +244,7 @@ static bool isRestingOnBlock (Tbot_board *board, Ttetrimino* t) {
     Tcoordinate tmp_x = getTetriminoX (t) + getMinoXDiff (tmp_mino);
     Tcoordinate tmp_y = getTetriminoY (t) + getMinoYDiff (tmp_mino);
     // Mino touches the ground, or there is a mino below it on the matrix
-    res = (tmp_y == 0) || !isMinoAtPosEmpty (getBotBoardMatrix (board), tmp_x, tmp_y - 1);
+    res = (tmp_y == 0) || getBotMatrixCellFilledState (getBotBoardMatrix (board), tmp_x, tmp_y - 1);
     i++;
   }
 
@@ -271,8 +271,8 @@ static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue
   // Array used to keep track of which spots have been visited
   // visited [tetrimino_x][tetrimino_y][Rotation state]
   #define NB_OF_ROTATIONS 4
-  #define VISITED_WIDTH C_MATRIX_WIDTH+1
-  bool visited [VISITED_WIDTH][C_MATRIX_HEIGHT][NB_OF_ROTATIONS];
+  #define VISITED_WIDTH BOT_MATRIX_WIDTH+1
+  bool visited [VISITED_WIDTH][BOT_MATRIX_HEIGHT][NB_OF_ROTATIONS];
   // Array used to know which node corresponds to which spot
   TMoveNode* known_nodes[VISITED_WIDTH][C_MATRIX_HEIGHT][NB_OF_ROTATIONS];
   // List of unvisited nodes

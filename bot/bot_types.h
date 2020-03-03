@@ -1,19 +1,53 @@
 #ifndef __BOT_TYPES_H__
 #define __BOT_TYPES_H__
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "../tetris_engine/tetris_engine.h"
 
+#define BOT_MATRIX_HEIGHT 45
+#define BOT_MATRIX_WIDTH 10
+
 typedef enum {L0=0, L1=1, L2=2, L3=3, L4=4, TSS, TSD, TST} Tline_clear;
+typedef uint16_t Trow;
+
+// --------------------------------------------------------------------------
+//                                MATRIX TYPE
+// --------------------------------------------------------------------------
 
 typedef struct {
-  Tmatrix matrix;
+  Trow rows [BOT_MATRIX_HEIGHT];
+} Tbot_matrix;
+
+// Constructor protoype
+Tbot_matrix createBotMatrix ();
+
+// Useful functions protoypes
+bool getBotMatrixCellFilledState (Tbot_matrix *matrix, Tcoordinate x, Tcoordinate y);
+void setBotMatrixCellFilledState (Tbot_matrix *matrix, Tcoordinate x, Tcoordinate y, bool new_state);
+
+bool isBotMatrixRowEmpty (Tbot_matrix *matrix, Tcoordinate row);
+bool isBotMatrixRowFull (Tbot_matrix *matrix, Tcoordinate row);
+
+Trow getBotMatrixRow (Tbot_matrix *matrix, Tcoordinate row_num);
+void setBotMatrixRow (Tbot_matrix *matrix, Tcoordinate row_num, Trow new_row);
+
+void copyBotMatrix (Tbot_matrix *dest, Tbot_matrix *src);
+
+// --------------------------------------------------------------------------
+//                                BOARD TYPE
+// --------------------------------------------------------------------------
+
+typedef struct {
+  Tbot_matrix matrix;
   Ttetrimino active_tetrimino;
   Tshape hold_piece;
   Tbyte next_queue_offset;
 } Tbot_board;
 
 // Accessors
-Tmatrix *getBotBoardMatrix (Tbot_board *board);
+Tbot_matrix *getBotBoardMatrix (Tbot_board *board);
 Ttetrimino *getBotBoardActiveTetrimino (Tbot_board *board);
 
 Tbyte getBotBoardNextQueueOffset (Tbot_board *board);
