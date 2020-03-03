@@ -34,8 +34,11 @@ Switching to C is also an opportunity to :
 - Create a graphical interface
 - Implement animations properly
 ### Bot
-- Change botBoard implementation to an array of words
 - General type overhaul
+- Optimize pathfinder for edge cases (O piece, try hold only if not same piece)
 - Add Sonic drop to pathfinder & better HD handling
 - Implement multiple queues with different priorities aka better tree search
 - Implement more metrics for the evaluation function
+- Pattern detection
+- Centralize constants
+- Better variable & type names plz
