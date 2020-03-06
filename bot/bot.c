@@ -143,10 +143,16 @@ static void computeHeights (Tbot_board *board, Tcoordinate *column_heights) {
 static float computeBumpiness (Tcoordinate *column_heights) {
 
   int bumpiness = 0;
-  for (Tcoordinate i = 0; i < C_MATRIX_WIDTH-1; i++) {
-    int diff = column_heights [i] - column_heights[i+1];
-    bumpiness += (diff>0)?(diff):(-diff);
+  int diff;
+  for (Tcoordinate i = 1; i < BOT_MATRIX_WIDTH-2; i++) {
+    diff = column_heights [i] - column_heights[i+1];
+    bumpiness += ABS(diff);
   }
+  // Special cases for the edges of the board
+  diff = column_heights [0] - column_heights[1];
+  bumpiness += 2*ABS(diff);
+  diff = column_heights [BOT_MATRIX_WIDTH-2] - column_heights[BOT_MATRIX_WIDTH-1];
+  bumpiness += 2*ABS(diff);
 
   return (float) bumpiness;
 }
@@ -180,7 +186,7 @@ static float computeNumberOfHoles (Tbot_board *board, Tcoordinate *column_height
   return (float) nb_of_holes;
 }
 static float evaluateBoard (Tbot_board *board, Tline_clear lines) {
-  Tcoordinate heights[C_MATRIX_WIDTH];
+  Tcoordinate heights[BOT_MATRIX_WIDTH];
   computeHeights (board, heights);
 
   // Potential future criteria : time, swag, damage, damage/line, death
