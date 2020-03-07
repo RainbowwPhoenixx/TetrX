@@ -17,7 +17,7 @@ typedef struct _Tnode {
   // by the evaluation function.
   Tbot_board board;
   Tbyte nb_of_moves;
-  Tmovement moves[MAX_MOVEMENTS];
+  Tbot_movement moves[MAX_MOVEMENTS];
   Tline_clear lines_cleared;
   float board_value;
 
@@ -40,8 +40,8 @@ void setNodeBotBoard (Tnode *node, Tbot_board new_board);
 Tbyte getNodeNbOfMoves (Tnode *node);
 void setNodeNbOfMoves (Tnode *node, Tbyte new_nb_of_moves);
 
-Tmovement getNodeIthMove (Tnode *node, Tbyte i);
-void setNodeIthMove (Tnode *node, Tbyte i, Tmovement new_move);
+Tbot_movement getNodeIthMove (Tnode *node, Tbyte i);
+void setNodeIthMove (Tnode *node, Tbyte i, Tbot_movement new_move);
 
 Tline_clear getNodeLinesCleared (Tnode *node);
 void setNodeLinesCleared (Tnode *node, Tline_clear lines);
@@ -71,7 +71,7 @@ Tnode *getNodeImmediateParent (Tnode* node);
 void setNodeImmediateParent (Tnode *node, Tnode *parent);
 
 // Constructor & destructor
-Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves, Tnode *parent);
+Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tbot_movement *moves, Tnode *parent);
 void freeNode (Tnode *tree);
 
 #endif /* end of include guard: __TREE_H__ */

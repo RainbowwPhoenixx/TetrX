@@ -15,10 +15,10 @@ void setNodeNbOfMoves (Tnode *node, Tbyte new_nb_of_moves) {
   node->nb_of_moves = new_nb_of_moves;
 }
 
-Tmovement getNodeIthMove (Tnode *node, Tbyte i) {
+Tbot_movement getNodeIthMove (Tnode *node, Tbyte i) {
   return node->moves[i];
 }
-void setNodeIthMove (Tnode *node, Tbyte i, Tmovement new_move) {
+void setNodeIthMove (Tnode *node, Tbyte i, Tbot_movement new_move) {
   node->moves[i] = new_move;
 }
 
@@ -90,7 +90,7 @@ void setNodeImmediateParent (Tnode *node, Tnode *parent) {
 }
 
 
-Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tmovement *moves, Tnode *parent) {
+Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tbot_movement *moves, Tnode *parent) {
   Tnode *tree = calloc (1, sizeof(Tnode));
 
   setNodeBotBoard (tree, board);

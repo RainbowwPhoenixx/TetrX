@@ -231,7 +231,7 @@ static void accumulateScoreIntoParents (Tnode *highest_parent, Tnode *node, floa
     link_level++;
   }
 }
-static Tnode *addNode(Tnode *parent, Tmovement *moves, Tbyte nb_of_moves, Tnext_queue *next_queue) {
+static Tnode *addNode(Tnode *parent, Tbot_movement *moves, Tbyte nb_of_moves, Tnext_queue *next_queue) {
   // Computes the board state of the given seqeunce of movements, computes its score, and adds it as a node
   // Returns a pointer to the created node
 
@@ -285,7 +285,7 @@ static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue
 
   // Move set that the pathfinder can use & durantion estimates for them
   Tbyte move_set_size = 5;
-  Tmovement move_set[] = {MV_LEFT, MV_RIGHT, MV_CW, MV_CCW, MV_SD};
+  Tbot_movement move_set[] = {BOT_MV_LEFT, BOT_MV_RIGHT, BOT_MV_CW, BOT_MV_CCW, BOT_MV_SD};
   Tbyte move_distances[] = {2, 2, 2, 2, 2};
 
   // Node currently being examined
@@ -323,19 +323,19 @@ static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue
       TMoveNode* potential_new_neighbour = createMoveNode (move_set[i], &(current->tetrimino), current->dist + move_distances[i], current);
       Ttetrimino* new_tetrimino = &(potential_new_neighbour->tetrimino);
       switch (move_set[i]) {
-        case MV_LEFT:
+        case BOT_MV_LEFT:
           moveTetriminoLeft (new_tetrimino);
         break;
-        case MV_RIGHT:
+        case BOT_MV_RIGHT:
           moveTetriminoRight (new_tetrimino);
         break;
-        case MV_CW:
+        case BOT_MV_CW:
           moveTetriminoCW (new_tetrimino);
         break;
-        case MV_CCW:
+        case BOT_MV_CCW:
           moveTetriminoCCW (new_tetrimino);
         break;
-        case MV_SD:
+        case BOT_MV_SD:
           moveTetriminoDown (new_tetrimino);
         break;
       }
@@ -363,7 +363,7 @@ static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue
     if (isRestingOnBlock (board_state, &(current->tetrimino))) {
       // Get path taken to get there
       Tbyte nb_of_moves = 0;
-      Tmovement reverse_moves[BOT_MAX_MOVES];
+      Tbot_movement reverse_moves[BOT_MAX_MOVES];
       TMoveNode* current_path_backtrack = current;
 
       do {
@@ -372,15 +372,15 @@ static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue
       } while((current_path_backtrack = current_path_backtrack->best_parent));
 
       if (should_insert_hold_move) {
-        reverse_moves[nb_of_moves] = MV_HOLD;
+        reverse_moves[nb_of_moves] = BOT_MV_HOLD;
         nb_of_moves++;
       }
 
-      Tmovement moves[BOT_MAX_MOVES];
+      Tbot_movement moves[BOT_MAX_MOVES];
       for (Tbyte j = 0; j < nb_of_moves; j++) {
         moves[j] = reverse_moves[nb_of_moves -j-1];
       }
-      moves[nb_of_moves] = MV_HD;
+      moves[nb_of_moves] = BOT_MV_HD;
       nb_of_moves++;
 
       Tnode *new_node = addNode (parent, moves, nb_of_moves, next_queue);
@@ -432,7 +432,7 @@ static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_
   copyBotBoard (&tmp_board, getNodeBotBoard (node));
   botPopTetriminoFromQueue (&tmp_board, next_queue);
   Tnode *best_node = generateMoves (node, &tmp_board, next_queue, processing_queue, false);
-  botApplyInput (&tmp_board, next_queue, MV_HOLD);
+  botApplyInput (&tmp_board, next_queue, BOT_MV_HOLD);
   Tnode *best_node2 =  generateMoves (node, &tmp_board, next_queue, processing_queue, true);
   best_node = (best_node>best_node2)?(best_node):(best_node2);
   accumulateScoreIntoParents (search_tree_root, best_node, getNodeBoardValue (best_node));
@@ -441,24 +441,28 @@ static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_
 }
 
 // Various processing functions
-static void translate_moves (Tmovement *moves, Tbyte *nb_of_moves) {
+static void translate_moves (Tbot_movement *src_moves, Tbyte src_nb_of_moves,Tmovement *dest_moves, Tbyte *dest_nb_of_moves) {
   // Translate moves from the bot's thinking to the game's thinking
 
-  // Copy the moves in a temporary list
-  Tmovement tmp_moves[MAX_MOVES];
-  Tbyte tmp_nb_of_moves = *nb_of_moves;
-  for (Tbyte i = 0; i < tmp_nb_of_moves; i++) {
-    tmp_moves[i] = moves [i];
-  }
-
   // Space out side moves (hypertap, not DAS)
-  *nb_of_moves = 0;
-  for (Tbyte i = 0; i < tmp_nb_of_moves; i++) {
-    moves[*nb_of_moves] = tmp_moves [i];
-    (*nb_of_moves)++;
-    if (isMovementInWord (tmp_moves+i, MV_LEFT) || isMovementInWord (tmp_moves+i, MV_RIGHT) || isMovementInWord (tmp_moves+i, MV_CW) || isMovementInWord (tmp_moves+i, MV_CCW)) {
-      moves [*nb_of_moves] = createMovementWord ();
-      (*nb_of_moves)++;
+  *dest_nb_of_moves = 0;
+  for (Tbyte i = 0; i < src_nb_of_moves; i++) {
+    Tmovement new_move;
+    switch (src_moves[i]) {
+      case BOT_MV_LEFT   : new_move = MV_LEFT   ; break;
+      case BOT_MV_RIGHT  : new_move = MV_RIGHT  ; break;
+      case BOT_MV_CW     : new_move = MV_CW     ; break;
+      case BOT_MV_CCW    : new_move = MV_CCW    ; break;
+      case BOT_MV_SD     : new_move = MV_SD     ; break;
+      case BOT_MV_SONICD : new_move = 0         ; break;
+      case BOT_MV_HD     : new_move = MV_HD     ; break;
+      case BOT_MV_HOLD   : new_move = MV_HOLD   ; break;
+    }
+    dest_moves[*dest_nb_of_moves] = new_move;
+    (*dest_nb_of_moves)++;
+    if (isBotMovementInWord (src_moves+i, BOT_MV_LEFT) || isBotMovementInWord (src_moves+i, BOT_MV_RIGHT) || isBotMovementInWord (src_moves+i, BOT_MV_CW) || isBotMovementInWord (src_moves+i, BOT_MV_CCW)) {
+      dest_moves [*dest_nb_of_moves] = createMovementWord ();
+      (*dest_nb_of_moves)++;
     }
   }
 }
@@ -508,11 +512,8 @@ static void *bot_TetrX (void *_bot) {
       #endif
 
       // Output the moves of the next piece of the best path found
-      for (Tbyte i = 0; i < best_child->nb_of_moves; i++) {
-        bot->next_moves[i] = best_child->moves[i];
-      }
       bot->next_moves_length = best_child->nb_of_moves;
-      translate_moves (bot->next_moves, &bot->next_moves_length);
+      translate_moves (&(best_child->moves), best_child->nb_of_moves, bot->next_moves, &bot->next_moves_length);
       // Signal that the next piece is ready.
       setOutputPieceReadyFlag (bot, true);
       // Reset the flag

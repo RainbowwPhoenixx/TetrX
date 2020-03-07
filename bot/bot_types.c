@@ -1,5 +1,26 @@
 #include "bot_types.h"
 
+
+// --------------------------------------------------------------------------
+//                               BOT MOVEMENT
+// --------------------------------------------------------------------------
+
+Tbot_movement createBotMovementWord () {
+  return 0;
+}
+
+void addBotMovementToWord (Tbot_movement *mv_word, Tbot_possible_movement mv) {
+  (*mv_word) = (*mv_word) | mv;
+}
+bool isBotMovementInWord (Tbot_movement *mv_word, Tbot_possible_movement mv) {
+  return (*mv_word & mv);
+}
+void removeBotMovementFromWord (Tbot_movement *mv_word, Tbot_possible_movement mv) {
+  if (isBotMovementInWord (mv_word, mv)) {
+    (*mv_word) = (*mv_word) ^ mv;
+  }
+}
+
 // --------------------------------------------------------------------------
 //                                MATRIX TYPE
 // --------------------------------------------------------------------------
@@ -346,22 +367,22 @@ static void botPerformHold (Tbot_board *b, Tnext_queue *next_queue) {
 }
 
 // General input handler
-void botApplyInput (Tbot_board *b, Tnext_queue *next_queue, Tmovement mv) {
+void botApplyInput (Tbot_board *b, Tnext_queue *next_queue, Tbot_movement mv) {
   // For each movement in the input, apply it to the board
-  if (isMovementInWord (&mv, MV_LEFT )) botPerformMoveLeft (b);
-  if (isMovementInWord (&mv, MV_RIGHT)) botPerformMoveRight (b);
-  if (isMovementInWord (&mv, MV_CW   )) botPerformRotateCW (b);
-  if (isMovementInWord (&mv, MV_CCW  )) botPerformRotateCCW (b);
-  if (isMovementInWord (&mv, MV_SD   )) botPerformSoftDrop (b);
-  if (isMovementInWord (&mv, MV_HD   )) botPerformHardDrop (b);
-  if (isMovementInWord (&mv, MV_HOLD )) botPerformHold (b, next_queue);
+  if (isBotMovementInWord (&mv, BOT_MV_LEFT )) botPerformMoveLeft (b);
+  if (isBotMovementInWord (&mv, BOT_MV_RIGHT)) botPerformMoveRight (b);
+  if (isBotMovementInWord (&mv, BOT_MV_CW   )) botPerformRotateCW (b);
+  if (isBotMovementInWord (&mv, BOT_MV_CCW  )) botPerformRotateCCW (b);
+  if (isBotMovementInWord (&mv, BOT_MV_SD   )) botPerformSoftDrop (b);
+  if (isBotMovementInWord (&mv, BOT_MV_HD   )) botPerformHardDrop (b);
+  if (isBotMovementInWord (&mv, BOT_MV_HOLD )) botPerformHold (b, next_queue);
 }
 
 // --------------------------------------------------------------------------
 //                        PATHFINDING STUFF
 // --------------------------------------------------------------------------
 
-TMoveNode* createMoveNode (Tmovement move, Ttetrimino* tetrimino, float distance, TMoveNode* parent) {
+TMoveNode* createMoveNode (Tbot_movement move, Ttetrimino* tetrimino, float distance, TMoveNode* parent) {
   TMoveNode* node = (TMoveNode*) malloc (sizeof(TMoveNode));
 
   node->move = move;
