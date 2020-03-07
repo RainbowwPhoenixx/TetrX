@@ -441,3 +441,12 @@ bool isNotObstacle (Tbot_board* b, Ttetrimino* t) {
 
   return res;
 }
+
+// --------------------------------------------------------------------------
+//                         LINE CLEAR TYPES
+// --------------------------------------------------------------------------
+
+Tline_clear createLineClear (Tbyte nb_lines, Tattack_kind attack) {
+  Tline_clear res = {.nb_of_lines = nb_lines, .attack_kind = attack};
+  return res;
+}

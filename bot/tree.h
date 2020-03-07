@@ -18,6 +18,7 @@ typedef struct _Tnode {
   Tbot_board board;
   Tbyte nb_of_moves;
   Tmovement moves[MAX_MOVEMENTS];
+  Tline_clear lines_cleared;
   float board_value;
 
   // Children related variables
@@ -41,6 +42,9 @@ void setNodeNbOfMoves (Tnode *node, Tbyte new_nb_of_moves);
 
 Tmovement getNodeIthMove (Tnode *node, Tbyte i);
 void setNodeIthMove (Tnode *node, Tbyte i, Tmovement new_move);
+
+Tline_clear getNodeLinesCleared (Tnode *node);
+void setNodeLinesCleared (Tnode *node, Tline_clear lines);
 
 float getNodeBoardValue (Tnode *node);
 void setNodeBoardValue (Tnode *node, float new_val);

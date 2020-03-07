@@ -185,24 +185,41 @@ static float computeNumberOfHoles (Tbot_board *board, Tcoordinate *column_height
   }
   return (float) nb_of_holes;
 }
-static float evaluateBoard (Tbot_board *board, Tline_clear lines) {
+static void evaluateNode (Tnode *node) {
+  // Look at the state of node, calculate its score and set its score field.
+  Tbot_board *board = getNodeBotBoard (node);
   Tcoordinate heights[BOT_MATRIX_WIDTH];
   computeHeights (board, heights);
 
   // Potential future criteria : time, swag, damage, damage/line, death
 
+  float max_height_score = computeMaxHeight (heights) - 6;
+  float avrg_height_score = computeAvrgHeight (heights) - 6;
+  float lines_score;
+  Tline_clear lines_cleared = getNodeLinesCleared(node);
+
+  switch (lines_cleared.nb_of_lines) {
+    case 0: lines_score = 0; break;
+    case 1: lines_score = 0;   break;
+    case 2: lines_score = 0;  break;
+    case 3: lines_score = 0;  break;
+    case 4: lines_score = 500; break;
+    default: lines_score = 0.0; break;
+  }
+
   float score = 0.0;
-  score += 2.5*lines*lines;
-  score += -1*ABS(computeMaxHeight (heights) - 6);
-  score += -7*ABS(computeAvrgHeight (heights) - 6);
+  score += lines_score;
+  score += -1*ABS(max_height_score);
+  score += -7*ABS(avrg_height_score);
   score += -1*computeBumpiness (heights);
   score += -100*computeNumberOfHoles (board, heights);
+
+  setNodeBoardValue (node, score);
+  setNodeAccumulatedBoardValue (node, score);
 
   #ifdef LOG_BOT_THINKING
   explored_nodes++;
   #endif
-
-  return score;
 }
 static void accumulateScoreIntoParents (Tnode *highest_parent, Tnode *node, float score) {
   Tnode *tmp_node = node;
@@ -226,15 +243,14 @@ static Tnode *addNode(Tnode *parent, Tmovement *moves, Tbyte nb_of_moves, Tnext_
     botApplyInput (&new_board, next_queue, moves[j]);
   }
   botLockActiveTetrimino (&new_board);
-  Tline_clear lines = botClearLines (&new_board);
+  Tline_clear lines = createLineClear (botClearLines (&new_board), NORMAL);
   Tnode *new_node = createNode (new_board, nb_of_moves, moves, parent);
+  setNodeLinesCleared (new_node, lines);
 
   // Add new node to the search tree, compute score, and update parent data
   setNodeIthChild (parent, getNodeNbOfChildren (parent), new_node);
   setNodeNbOfChildren (parent, getNodeNbOfChildren (parent)+1);
-  float board_score = evaluateBoard (&new_board, lines);
-  setNodeBoardValue (new_node, board_score);
-  setNodeAccumulatedBoardValue (new_node, board_score);
+  evaluateNode (new_node);
 
   return new_node;
 }

@@ -9,7 +9,6 @@
 #define BOT_MATRIX_HEIGHT 45
 #define BOT_MATRIX_WIDTH 10
 
-typedef enum {L0=0, L1=1, L2=2, L3=3, L4=4, TSS, TSD, TST} Tline_clear;
 typedef uint16_t Trow;
 
 // --------------------------------------------------------------------------
@@ -95,5 +94,18 @@ void addMoveNodeToList (TMoveNode* mvnode, TMoveNodeList* list);
 TMoveNode* popMinMoveNodeFromList (TMoveNodeList *list);
 
 bool isNotObstacle (Tbot_board* b, Ttetrimino* t);
+
+// --------------------------------------------------------------------------
+//                         LINE CLEAR TYPES
+// --------------------------------------------------------------------------
+
+typedef enum {NONE, NORMAL, TSPIN, PC} Tattack_kind;
+
+typedef struct {
+  Tbyte nb_of_lines;
+  Tattack_kind attack_kind;
+} Tline_clear;
+
+Tline_clear createLineClear (Tbyte nb_of_lines, Tattack_kind attack);
 
 #endif /* end of include guard: __BOT_TYPES_H__ */

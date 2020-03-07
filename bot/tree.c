@@ -22,6 +22,13 @@ void setNodeIthMove (Tnode *node, Tbyte i, Tmovement new_move) {
   node->moves[i] = new_move;
 }
 
+Tline_clear getNodeLinesCleared (Tnode *node) {
+  return node->lines_cleared;
+}
+void setNodeLinesCleared (Tnode *node, Tline_clear lines) {
+  node->lines_cleared = lines;
+}
+
 float getNodeBoardValue (Tnode *node) {
   return node->board_value;
 }
