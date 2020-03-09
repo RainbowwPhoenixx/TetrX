@@ -118,7 +118,7 @@ void copyBotBoard (Tbot_board *dest, Tbot_board *src) {
   setBotBoardNextQueueOffset (dest, getBotBoardNextQueueOffset (src));
 }
 Tbot_board convertBoardToBotBoard (Tboard *b) {
-  Tbot_board bb;
+  Tbot_board bb = createBotBoard();
   Tbot_matrix* tmp_botmat = getBotBoardMatrix (&bb);
   Tmatrix* tmp_mat = getBoardMatrix (b);
   // Convert matrix
