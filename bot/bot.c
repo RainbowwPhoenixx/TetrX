@@ -513,7 +513,7 @@ static void *bot_TetrX (void *_bot) {
 
       // Output the moves of the next piece of the best path found
       bot->next_moves_length = best_child->nb_of_moves;
-      translate_moves (&(best_child->moves), best_child->nb_of_moves, bot->next_moves, &bot->next_moves_length);
+      translate_moves ((Tbot_movement*) &(best_child->moves), best_child->nb_of_moves, bot->next_moves, &bot->next_moves_length);
       // Signal that the next piece is ready.
       setOutputPieceReadyFlag (bot, true);
       // Reset the flag
