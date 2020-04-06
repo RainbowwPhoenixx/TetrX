@@ -40,5 +40,4 @@ Switching to C is also an opportunity to :
 - Implement multiple queues with different priorities aka better tree search
 - Implement more metrics for the evaluation function
 - Pattern detection
-- Centralize constants
 - Better variable & type names plz
