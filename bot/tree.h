@@ -5,10 +5,9 @@
 #include "../interface/type_interface.h"
 #include "bot_types.h"
 #include <stdlib.h>
+#include "bot_parameters.h"
 
 // Definition of the search tree used by the bot
-#define MAX_MOVEMENTS 50
-#define MAX_CHILDREN 200
 
 typedef struct _Tnode {
   // A node contains the state of the board, with the active piece

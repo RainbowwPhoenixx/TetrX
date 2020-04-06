@@ -1,16 +1,13 @@
 #include "bot.h"
 #include <unistd.h>
 #include <stdio.h>
+#include "bot_parameters.h"
 
-#define LOG_BOT_THINKING
 #ifdef LOG_BOT_THINKING
 #define LOGFILE "bot_debug.log"
 #endif
 
-#define BOT_MAX_MOVES 50
-
 #define ABS(val) (((val)<0)?(-(val)):(val))
-#define BOT_MAX_PREVIEWS 3 // Do not set lower than 1
 // float accumulation_weights[20] = {1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16, 1/17, 1/17, 1/19, 1/20};
 // float accumulation_weights[20] = {1, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256};
 float accumulation_weights[20] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};

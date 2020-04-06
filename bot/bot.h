@@ -8,6 +8,7 @@
 #include "node_queue.h"
 #include <pthread.h>
 #include <stdbool.h>
+#include "bot_parameters.h"
 
 typedef struct {
   // General purpose fields

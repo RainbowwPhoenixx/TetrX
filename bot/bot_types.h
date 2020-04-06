@@ -3,11 +3,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "bot_parameters.h"
 
 #include "../tetris_engine/tetris_engine.h"
-
-#define BOT_MATRIX_HEIGHT 45
-#define BOT_MATRIX_WIDTH 10
 
 typedef uint16_t Trow;
 
@@ -105,7 +103,7 @@ typedef struct _TMoveNode {
 
 typedef struct { // Change to heap implementation later for optimization
   unsigned int size;
-  TMoveNode* items[1000];
+  TMoveNode* items[MOVE_NODE_LIST_MAX_ITEMS];
 } TMoveNodeList;
 
 TMoveNode* createMoveNode (Tbot_movement move, Ttetrimino* tetrimino, float distance, TMoveNode* parent);

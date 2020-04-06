@@ -2,7 +2,7 @@
 #define __MOVE_QUEUE_H__
 
 #include "../tetris_engine/tetris_engine.h"
-#define MAX_MOVES 80
+#include "bot_parameters.h"
 
 typedef struct {
   Tbyte head, tail, size;

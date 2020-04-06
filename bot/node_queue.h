@@ -2,6 +2,7 @@
 #define __NODE_QUEUE_H__
 
 #include "tree.h"
+#include "bot_parameters.h"
 
 // Linked list that will act as a queue
 struct _Tnode_queue_element {
