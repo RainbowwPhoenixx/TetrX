@@ -50,6 +50,10 @@ Tnode *getFromNodeQueue (Tnode_queue *queue) {
   return res;
 }
 
+unsigned long getNodeQueueSize (Tnode_queue *queue) {
+  return queue->size;
+}
+
 Tnode_queue createNodeQueue () {
   Tnode_queue queue;
   queue.head = NULL;

@@ -19,6 +19,8 @@ void addToNodeQueue (Tnode_queue *queue, Tnode *node); // Adds the given node to
 void addToNodeQueueBeginning (Tnode_queue *queue, Tnode *node);
 Tnode *getFromNodeQueue (Tnode_queue *queue); // Pop the next element off the queue
 
+unsigned long getNodeQueueSize (Tnode_queue *queue);
+
 Tnode_queue createNodeQueue ();
 void freeNodeQueue (Tnode_queue *queue);
 
