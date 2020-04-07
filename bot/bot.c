@@ -407,13 +407,12 @@ static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue
 static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_queue, Tnode_queue *processing_queue) {
   // Generate the possible moves from the given node, and assign them a score
   // Return the best generated node
-  // Returns NULL if children were already generated
+  // Returns NULL if children were already generated or max depth is reached
 
   Tnode *node = getFromNodeQueue (processing_queue);
   // If max previews is reached, don't compute
   if (node == NULL ||
       (depth = getBotBoardNextQueueOffset (getNodeBotBoard (node)) - getBotBoardNextQueueOffset (getNodeBotBoard (search_tree_root))) >= bot->max_previews) {
-    // addToNodeQueue (processing_queue, node);
     return NULL;
   }
 
@@ -549,9 +548,10 @@ static void *bot_TetrX (void *_bot) {
     }
 
     // Do the thinking
-    if (expandNode (bot, search_tree, &global_next_queue, &processing_queue) == NULL) {
-      usleep (1000);
-    }
+    // If queue is not empty, try expanding the new node, else pause for a bit
+    if (getNodeQueueSize (&processing_queue) != NULL) {
+      expandNode (bot, search_tree, &global_next_queue, &processing_queue);
+    } else {usleep (1000);}
     // Generate the moves, compute their value, and put them in the queue
   }
 
