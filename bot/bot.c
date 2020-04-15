@@ -117,12 +117,14 @@ Tbyte depth = 0;
 // Debug functions
 int explored_nodes = 0;
 void logBestNode (FILE *logfile, Tnode *node) {
-  fprintf(logfile, "Chosen node had a score of : %12.2f\n", getNodeAccumulatedBoardValue (node));
-  fflush (logfile);
-}
-void logVarious (FILE *logfile) {
+  fprintf(logfile, "Chosen node had a score of : Normal: %6.2f\tAccumulated: %6.2f\n", getNodeBoardValue(node), getNodeAccumulatedBoardValue (node));
+  Ttetrimino *tet = getBotBoardActiveTetrimino (getNodeBotBoard (node));
+  fprintf(logfile, "Piece : %d, %d, %d, %d\n", getTetriminoShape (tet), getTetriminoX (tet), getTetriminoY (tet), getTetriminoRotationState (tet));
+  Tline_clear lines = getNodeLinesCleared (node);
+  fprintf(logfile, "Attack : lines: %d \t type: %d\n", lines.nb_of_lines, lines.attack_kind);
   fprintf(logfile, "Thinking depth : %d\n", depth);
   fprintf(logfile, "Explored nodes : %d\n", explored_nodes);
+  fprintf(logfile, "\n");
   fflush (logfile);
 }
 #endif
@@ -503,7 +505,6 @@ static void *bot_TetrX (void *_bot) {
 
       #ifdef LOG_BOT_THINKING
       logBestNode (logfile, best_child);
-      logVarious (logfile);
       explored_nodes = 0;
       #endif
 
