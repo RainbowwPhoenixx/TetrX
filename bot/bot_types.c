@@ -36,6 +36,9 @@ Tbot_matrix createBotMatrix () {
 
 // Useful functions
 bool getBotMatrixCellFilledState (Tbot_matrix *matrix, Tcoordinate x, Tcoordinate y) {
+  if (x < 0 || x >= BOT_MATRIX_WIDTH) {
+    return 1;
+  } else
   return (matrix->rows[y] & (1 << x));
 }
 void setBotMatrixCellFilledState (Tbot_matrix *matrix, Tcoordinate x, Tcoordinate y, bool new_state) {
