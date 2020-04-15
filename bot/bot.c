@@ -192,18 +192,19 @@ static void evaluateNode (Tnode *node) {
 
   // Potential future criteria : time, swag, damage, damage/line, death
 
-  float max_height_score = computeMaxHeight (heights) - 6;
+  float max_height_score = computeMaxHeight (heights) - 5;
   float avrg_height_score = computeAvrgHeight (heights) - 6;
   float lines_score, spin_score = 0;
   Tline_clear lines_cleared = getNodeLinesCleared(node);
 
   switch (lines_cleared.nb_of_lines) {
-    case 0: lines_score = 0; break;
-    case 1: lines_score = 0;   break;
-    case 2: lines_score = 0;  break;
-    case 3: lines_score = 0;  break;
-    case 4: lines_score = 500; break;
-    default: lines_score = 0.0; break;
+    case 0: lines_score = 0;  break;
+    case 1: lines_score = 5;  break;
+    case 2: lines_score = 10;  break;
+    case 3: lines_score = 25;  break;
+    case 4: lines_score = 50; break;
+    default: lines_score = 0; break;
+  }
 
   if (lines_cleared.attack_kind == TSPIN) {
     spin_score = 150;
@@ -575,7 +576,7 @@ static void *bot_TetrX (void *_bot) {
 
     // Do the thinking
     // If queue is not empty, try expanding the new node, else pause for a bit
-    if (getNodeQueueSize (&processing_queue) != NULL) {
+    if (getNodeQueueSize (&processing_queue) > 0) {
       expandNode (bot, search_tree, &global_next_queue, &processing_queue);
     } else {usleep (1000);}
     // Generate the moves, compute their value, and put them in the queue
