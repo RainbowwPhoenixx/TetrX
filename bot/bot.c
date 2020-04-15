@@ -194,7 +194,7 @@ static void evaluateNode (Tnode *node) {
 
   float max_height_score = computeMaxHeight (heights) - 6;
   float avrg_height_score = computeAvrgHeight (heights) - 6;
-  float lines_score;
+  float lines_score, spin_score = 0;
   Tline_clear lines_cleared = getNodeLinesCleared(node);
 
   switch (lines_cleared.nb_of_lines) {
@@ -204,10 +204,14 @@ static void evaluateNode (Tnode *node) {
     case 3: lines_score = 0;  break;
     case 4: lines_score = 500; break;
     default: lines_score = 0.0; break;
+
+  if (lines_cleared.attack_kind == TSPIN) {
+    spin_score = 150;
   }
 
   float score = 0.0;
   score += lines_score;
+  score += spin_score;
   score += -1*ABS(max_height_score);
   score += -7*ABS(avrg_height_score);
   score += -1*computeBumpiness (heights);
@@ -242,7 +246,28 @@ static Tnode *addNode(Tnode *parent, Tbot_movement *moves, Tbyte nb_of_moves, Tn
     botApplyInput (&new_board, next_queue, moves[j]);
   }
   botLockActiveTetrimino (&new_board);
-  Tline_clear lines = createLineClear (botClearLines (&new_board), NORMAL);
+  Tattack_kind attack = NORMAL;
+  // Tspin detection
+  // If piece is a T and last move was a rotation
+  Tbot_movement rotations = BOT_MV_CW | BOT_MV_CCW;
+  if ((getTetriminoShape (getBotBoardActiveTetrimino (&new_board)) == T) && isBotMovementInWord (&rotations, moves[nb_of_moves-2])) {
+    Tbot_matrix *tmp_mat = getBotBoardMatrix (&new_board);
+    Ttetrimino *tmp_tet = getBotBoardActiveTetrimino (&new_board);
+    Tcoordinate tet_x = getTetriminoX (tmp_tet);
+    Tcoordinate tet_y = getTetriminoY (tmp_tet);
+    // If three corners are filled
+    Tbyte corners = 0;
+    corners += getBotMatrixCellFilledState (tmp_mat, tet_x+1, tet_y+1);
+    corners += getBotMatrixCellFilledState (tmp_mat, tet_x+1, tet_y-1);
+    corners += getBotMatrixCellFilledState (tmp_mat, tet_x-1, tet_y-1);
+    corners += getBotMatrixCellFilledState (tmp_mat, tet_x-1, tet_y+1);
+    if (corners >= 3) {
+      // Then it's a tspin
+      attack = TSPIN;
+    }
+  }
+
+  Tline_clear lines = createLineClear (botClearLines (&new_board), attack);
   Tnode *new_node = createNode (new_board, nb_of_moves, moves, parent);
   setNodeLinesCleared (new_node, lines);
 
