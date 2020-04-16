@@ -41,3 +41,4 @@ Switching to C is also an opportunity to :
 - Implement more metrics for the evaluation function
 - Pattern detection
 - Better variable & type names plz
+- Sort node children by score ?
