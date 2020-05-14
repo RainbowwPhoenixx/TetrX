@@ -347,23 +347,8 @@ static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue
     for (Tbyte i = 0; i < move_set_size; i++) {
       TMoveNode* potential_new_neighbour = createMoveNode (move_set[i], &(current->tetrimino), current->dist + move_distances[i], current);
       Ttetrimino* new_tetrimino = &(potential_new_neighbour->tetrimino);
-      switch (move_set[i]) {
-        case BOT_MV_LEFT:
-          moveTetriminoLeft (new_tetrimino);
-        break;
-        case BOT_MV_RIGHT:
-          moveTetriminoRight (new_tetrimino);
-        break;
-        case BOT_MV_CW:
-          moveTetriminoCW (new_tetrimino);
-        break;
-        case BOT_MV_CCW:
-          moveTetriminoCCW (new_tetrimino);
-        break;
-        case BOT_MV_SD:
-          moveTetriminoDown (new_tetrimino);
-        break;
-      }
+      applyBotMoveToTetrimino (move_set[i], new_tetrimino, board_state);
+
       // If node is not visited & is not an obstacle
       if (isNotObstacle (board_state, new_tetrimino)
           && !visited[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)]) {

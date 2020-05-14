@@ -465,6 +465,22 @@ bool isNotObstacle (Tbot_board* b, Ttetrimino* t) {
 
   return res;
 }
+void applyBotMoveToTetrimino (Tmovement mv, Ttetrimino* t, Tbot_board* board) {
+  // Applies the given move to the tetrimino
+  switch  (mv) {
+    case BOT_MV_LEFT:  moveTetriminoLeft  (t); break;
+    case BOT_MV_RIGHT: moveTetriminoRight (t); break;
+    case BOT_MV_CW:    moveTetriminoCW    (t); break;
+    case BOT_MV_CCW:   moveTetriminoCCW   (t); break;
+    case BOT_MV_SD:    moveTetriminoDown  (t); break;
+    case BOT_MV_SONICD:
+      do {
+        moveTetriminoDown (t);
+      } while(isNotObstacle (board, t));
+      moveTetriminoUp(t);
+    break;
+  }
+}
 
 // --------------------------------------------------------------------------
 //                         LINE CLEAR TYPES

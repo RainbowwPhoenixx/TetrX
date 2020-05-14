@@ -113,6 +113,7 @@ void addMoveNodeToList (TMoveNode* mvnode, TMoveNodeList* list);
 TMoveNode* popMinMoveNodeFromList (TMoveNodeList *list);
 
 bool isNotObstacle (Tbot_board* b, Ttetrimino* t);
+void applyBotMoveToTetrimino (Tmovement mv, Ttetrimino* t, Tbot_board* board);
 
 // --------------------------------------------------------------------------
 //                         LINE CLEAR TYPES
