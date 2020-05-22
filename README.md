@@ -36,9 +36,9 @@ Switching to C is also an opportunity to :
 ### Bot
 - General type overhaul
 - Optimize pathfinder for edge cases (O piece, try hold only if not same piece)
-- Add Sonic drop to pathfinder & better HD handling
 - Implement multiple queues with different priorities aka better tree search
 - Implement more metrics for the evaluation function
 - Pattern detection
 - Better variable & type names plz
 - Sort node children by score ?
+- Fix empty move that gets inserted in pathfinder at the beginning of the move list
