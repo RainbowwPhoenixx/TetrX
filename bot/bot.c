@@ -243,10 +243,9 @@ static Tnode *addNode(Tnode *parent, Tbot_movement *moves, Tbyte nb_of_moves, Tn
   Tbot_board new_board;
   copyBotBoard (&new_board, getNodeBotBoard (parent));
   botPopTetriminoFromQueue (&new_board, next_queue);
-  for (Tbyte j = 0; j < nb_of_moves; j++) {
+  for (Tbyte j = 0; j < nb_of_moves-1; j++) {
     botApplyInput (&new_board, next_queue, moves[j]);
   }
-  botLockActiveTetrimino (&new_board);
   Tattack_kind attack = NORMAL;
   // Tspin detection
   // If piece is a T and last move was a rotation
@@ -267,6 +266,8 @@ static Tnode *addNode(Tnode *parent, Tbot_movement *moves, Tbyte nb_of_moves, Tn
       attack = TSPIN;
     }
   }
+  botApplyInput (&new_board, next_queue, moves[nb_of_moves-1]); // Change moves[nb_of_moves-1] to BOT_MV_HD since it should always be that ?
+  botLockActiveTetrimino (&new_board);
 
   Tline_clear lines = createLineClear (botClearLines (&new_board), attack);
   Tnode *new_node = createNode (new_board, nb_of_moves, moves, parent);
@@ -310,8 +311,8 @@ static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue
 
   // Move set that the pathfinder can use & durantion estimates for them
   Tbyte move_set_size = 5;
-  Tbot_movement move_set[] = {BOT_MV_LEFT, BOT_MV_RIGHT, BOT_MV_CW, BOT_MV_CCW, BOT_MV_SD};
-  Tbyte move_distances[] = {2, 2, 2, 2, 2};
+  Tbot_movement move_set[] = {BOT_MV_LEFT, BOT_MV_RIGHT, BOT_MV_CW, BOT_MV_CCW, BOT_MV_SONICD};
+  Tbyte move_distances[] = {2, 2, 2, 2, 10}; // Sonic drop cost is calculated at the end
 
   // Node currently being examined
   TMoveNode* current;
@@ -372,9 +373,10 @@ static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue
     // Add as a tree node if position is final
     if (isRestingOnBlock (board_state, &(current->tetrimino))) {
       // Get path taken to get there
-      Tbyte nb_of_moves = 0;
+      Tbyte nb_of_moves = 0, final_nb_of_moves = 0;
       Tbot_movement reverse_moves[BOT_MAX_MOVES];
       TMoveNode* current_path_backtrack = current;
+      Ttetrimino spin_check_tet = createTetrimino (getTetriminoShape(getBotBoardActiveTetrimino(board_state)));
 
       do {
         reverse_moves[nb_of_moves] = current_path_backtrack->move;
@@ -386,14 +388,31 @@ static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue
         nb_of_moves++;
       }
 
+      // Take the backward moves and put them in order.
+      // Also handle special cases for sonic drop.
+      // Apply the moves to a tetrimino as we go along to know how much to soft drop
       Tbot_movement moves[BOT_MAX_MOVES];
       for (Tbyte j = 0; j < nb_of_moves; j++) {
-        moves[j] = reverse_moves[nb_of_moves -j-1];
+        Tmovement move_to_add = reverse_moves[nb_of_moves -j-1];
+        if (move_to_add == BOT_MV_SONICD) {
+          // If sonic drop is last move, just ignore it
+          if (j < nb_of_moves-1) {
+            // Replace sonic drops with a bunch of soft drops
+            do  {
+              moves[final_nb_of_moves++] = BOT_MV_SD;
+              moveTetriminoDown (&spin_check_tet);
+            } while(isNotObstacle (board_state, &spin_check_tet));
+            moveTetriminoUp(&spin_check_tet);
+            final_nb_of_moves--;
+          }
+        } else {
+          moves[final_nb_of_moves++] = move_to_add;
+          applyBotMoveToTetrimino (move_to_add, &spin_check_tet, board_state);
+        }
       }
-      moves[nb_of_moves] = BOT_MV_HD;
-      nb_of_moves++;
+      moves[final_nb_of_moves++] = BOT_MV_HD;
 
-      Tnode *new_node = addNode (parent, moves, nb_of_moves, next_queue);
+      Tnode *new_node = addNode (parent, moves, final_nb_of_moves, next_queue);
       addToNodeQueue (processing_queue, new_node);
       if (getNodeBoardValue (new_node) > best_score) {
         best_score = getNodeBoardValue (new_node);
@@ -467,6 +486,7 @@ static void translate_moves (Tbot_movement *src_moves, Tbyte src_nb_of_moves,Tmo
       case BOT_MV_HD     : new_move = MV_HD     ; break;
       case BOT_MV_HOLD   : new_move = MV_HOLD   ; break;
     }
+
     dest_moves[*dest_nb_of_moves] = new_move;
     (*dest_nb_of_moves)++;
     if (isBotMovementInWord (src_moves+i, BOT_MV_LEFT) || isBotMovementInWord (src_moves+i, BOT_MV_RIGHT) || isBotMovementInWord (src_moves+i, BOT_MV_CW) || isBotMovementInWord (src_moves+i, BOT_MV_CCW)) {
