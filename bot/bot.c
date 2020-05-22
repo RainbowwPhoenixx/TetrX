@@ -207,7 +207,7 @@ static void evaluateNode (Tnode *node) {
   }
 
   if (lines_cleared.attack_kind == TSPIN) {
-    spin_score = 150;
+    spin_score = 500*lines_cleared.nb_of_lines;
   }
 
   float score = 0.0;
