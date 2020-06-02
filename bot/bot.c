@@ -140,7 +140,6 @@ static void computeHeights (Tbot_board *board, Tcoordinate *column_heights) {
   }
 }
 static float computeBumpiness (Tcoordinate *column_heights) {
-
   int bumpiness = 0;
   int diff;
   for (Tcoordinate i = 1; i < BOT_MATRIX_WIDTH-2; i++) {
@@ -152,6 +151,21 @@ static float computeBumpiness (Tcoordinate *column_heights) {
   bumpiness += 2*ABS(diff);
   diff = column_heights [BOT_MATRIX_WIDTH-2] - column_heights[BOT_MATRIX_WIDTH-1];
   bumpiness += 2*ABS(diff);
+
+  return (float) bumpiness;
+}
+static float computeBumpinessSquared (Tcoordinate *column_heights) {
+  int bumpiness = 0;
+  int diff;
+  for (Tcoordinate i = 1; i < BOT_MATRIX_WIDTH-2; i++) {
+    diff = column_heights [i] - column_heights[i+1];
+    bumpiness += ABS(diff*diff);
+  }
+  // Special cases for the edges of the board
+  diff = column_heights [0] - column_heights[1];
+  bumpiness += 2*ABS(diff*diff);
+  diff = column_heights [BOT_MATRIX_WIDTH-2] - column_heights[BOT_MATRIX_WIDTH-1];
+  bumpiness += 2*ABS(diff*diff);
 
   return (float) bumpiness;
 }
@@ -216,6 +230,7 @@ static void evaluateNode (Tnode *node) {
   score += -1*ABS(max_height_score);
   score += -7*ABS(avrg_height_score);
   score += -1*computeBumpiness (heights);
+  // score += -.05*computeBumpinessSquared (heights);
   score += -100*computeNumberOfHoles (board, heights);
 
   setNodeBoardValue (node, score);
