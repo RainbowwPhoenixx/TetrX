@@ -291,9 +291,8 @@ static Tnode *addNode(Tnode *parent, Tbot_movement *moves, Tbyte nb_of_moves, Tn
   setNodeLinesCleared (new_node, lines);
 
   // Add new node to the search tree, compute score, and update parent data
-  setNodeIthChild (parent, getNodeNbOfChildren (parent), new_node);
-  setNodeNbOfChildren (parent, getNodeNbOfChildren (parent)+1);
   evaluateNode (new_node);
+  addChildToNode (parent, new_node);
 
   return new_node;
 }

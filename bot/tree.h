@@ -49,9 +49,9 @@ float getNodeBoardValue (Tnode *node);
 void setNodeBoardValue (Tnode *node, float new_val);
 
 unsigned short getNodeNbOfChildren (Tnode *node);
-void setNodeNbOfChildren (Tnode *node, unsigned short new_nb_of_children);
 
 Tnode *getNodeIthChild (Tnode *node, unsigned short i);
+void addChildToNode (Tnode *node, Tnode *new_child);
 void setNodeIthChild (Tnode *node, unsigned short i, Tnode *new_child);
 
 bool getNodeAreChildrenGenerated (Tnode *node);

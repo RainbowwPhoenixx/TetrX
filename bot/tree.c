@@ -39,17 +39,25 @@ void setNodeBoardValue (Tnode *node, float new_val) {
 unsigned short getNodeNbOfChildren (Tnode *node) {
   return node->nb_of_children;
 }
-void setNodeNbOfChildren (Tnode *node, unsigned short new_nb_of_children) {
+static void setNodeNbOfChildren (Tnode *node, unsigned short new_nb_of_children) {
   node->nb_of_children = new_nb_of_children;
 }
 
 Tnode *getNodeIthChild (Tnode *node, unsigned short i) {
   return node->children[i];
 }
+void addChildToNode (Tnode *node, Tnode *new_child) {
+  Tbyte i = node->nb_of_children;
+  if (new_child != NULL) {
+    node->children[i] = new_child;
+    setNodeChildID (new_child, i);
+    node->nb_of_children++;
+  }
+}
 void setNodeIthChild (Tnode *node, unsigned short i, Tnode *new_child) {
   node->children[i] = new_child;
   if (new_child != NULL) {
-    setNodeChildID (node->children[i], i);
+    setNodeChildID (new_child, i);
   }
 }
 
