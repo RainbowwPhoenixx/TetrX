@@ -206,6 +206,7 @@ static void evaluateNode (Tnode *node) {
 
   // Potential future criteria : time, swag, damage, damage/line, death
 
+  float landing_height = (float) getTetriminoY (getBotBoardActiveTetrimino(board));
   float max_height_score = computeMaxHeight (heights) - 5;
   float avrg_height_score = computeAvrgHeight (heights) - 6;
   float lines_score, spin_score = 0;
@@ -213,9 +214,9 @@ static void evaluateNode (Tnode *node) {
 
   switch (lines_cleared.nb_of_lines) {
     case 0: lines_score = 0;  break;
-    case 1: lines_score = 5;  break;
-    case 2: lines_score = 10;  break;
-    case 3: lines_score = 25;  break;
+    case 1: lines_score = -25;  break;
+    case 2: lines_score = -10;  break;
+    case 3: lines_score =  -5;  break;
     case 4: lines_score = 50; break;
     default: lines_score = 0; break;
   }
@@ -227,6 +228,7 @@ static void evaluateNode (Tnode *node) {
   float score = 0.0;
   score += lines_score;
   score += spin_score;
+  score += -2*landing_height;
   score += -1*ABS(max_height_score);
   score += -7*ABS(avrg_height_score);
   score += -1*computeBumpiness (heights);
