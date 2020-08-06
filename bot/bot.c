@@ -118,6 +118,7 @@ Tbyte depth = 0;
 int explored_nodes = 0;
 void logBestNode (FILE *logfile, Tnode *node) {
   fprintf(logfile, "Chosen node had a score of : Normal: %6.2f\tAccumulated: %6.2f\n", getNodeBoardValue(node), getNodeAccumulatedBoardValue (node));
+  fprintf(logfile, "Initial rank : %d/%d\n", getNodeInitialRank (node), getNodeNbOfChildren (getNodeImmediateParent (node)));
   Ttetrimino *tet = getBotBoardActiveTetrimino (getNodeBotBoard (node));
   fprintf(logfile, "Piece : %d, %d, %d, %d\n", getTetriminoShape (tet), getTetriminoX (tet), getTetriminoY (tet), getTetriminoRotationState (tet));
   Tline_clear lines = getNodeLinesCleared (node);
@@ -236,7 +237,6 @@ static void evaluateNode (Tnode *node) {
   score += -100*computeNumberOfHoles (board, heights);
 
   setNodeBoardValue (node, score);
-  setNodeAccumulatedBoardValue (node, score);
 
   #ifdef LOG_BOT_THINKING
   explored_nodes++;
@@ -247,8 +247,8 @@ static void accumulateScoreIntoParents (Tnode *highest_parent, Tnode *node, floa
   Tbyte link_level = 0;
 
   while (tmp_node != highest_parent) {
-    tmp_node = getNodeImmediateParent (tmp_node);
     setNodeAccumulatedBoardValue (tmp_node, getNodeAccumulatedBoardValue (tmp_node) + score * accumulation_weights[link_level]);
+    tmp_node = getNodeImmediateParent (tmp_node);
     link_level++;
   }
 }
