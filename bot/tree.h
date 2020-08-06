@@ -28,7 +28,7 @@ typedef struct _Tnode {
   unsigned short number_of_accumulations;
 
   // Parent related variables
-  unsigned short child_id;
+  unsigned short initial_rank;
   struct _Tnode *immediate_parent;
 } Tnode;
 
@@ -53,6 +53,7 @@ unsigned short getNodeNbOfChildren (Tnode *node);
 Tnode *getNodeIthChild (Tnode *node, unsigned short i);
 void addChildToNode (Tnode *node, Tnode *new_child);
 void setNodeIthChild (Tnode *node, unsigned short i, Tnode *new_child);
+void computeChildrenInitialRanks (Tnode *node);
 
 bool getNodeAreChildrenGenerated (Tnode *node);
 void setNodeAreChildrenGenerated (Tnode *node, bool new_val);
@@ -63,8 +64,8 @@ void setNodeAccumulatedBoardValue (Tnode *node, float new_acc_value);
 unsigned int getNodeNbOfAccumulations (Tnode *node);
 void increaseNodeNbOfAccumulations (Tnode *node);
 
-unsigned short getNodeChildID (Tnode *node);
-void setNodeChildID (Tnode *node, unsigned short new_val);
+unsigned short getNodeInitialRank (Tnode *node);
+void setNodeInitialRank (Tnode *node, unsigned short new_val);
 
 Tnode *getNodeImmediateParent (Tnode* node);
 void setNodeImmediateParent (Tnode *node, Tnode *parent);

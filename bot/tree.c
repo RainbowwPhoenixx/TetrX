@@ -56,8 +56,12 @@ void addChildToNode (Tnode *node, Tnode *new_child) {
 }
 void setNodeIthChild (Tnode *node, unsigned short i, Tnode *new_child) {
   node->children[i] = new_child;
-  if (new_child != NULL) {
-    setNodeChildID (new_child, i);
+}
+void computeChildrenInitialRanks (Tnode *node) {
+  // Method to call when all children of node have been generated
+  Tnode **children = node->children;
+  for (Tbyte i = 0; i < getNodeNbOfChildren (node); i++) {
+    setNodeInitialRank (children[i], i);
   }
 }
 
@@ -83,11 +87,11 @@ void increaseNodeNbOfAccumulations (Tnode *node) {
   node->number_of_accumulations++;
 }
 
-unsigned short getNodeChildID (Tnode *node) {
-  return node->child_id;
+unsigned short getNodeInitialRank (Tnode *node) {
+  return node->initial_rank;
 }
-void setNodeChildID (Tnode *node, unsigned short new_val){
-  node->child_id = new_val;
+void setNodeInitialRank (Tnode *node, unsigned short new_val){
+  node->initial_rank = new_val;
 }
 
 Tnode *getNodeImmediateParent (Tnode* node) {

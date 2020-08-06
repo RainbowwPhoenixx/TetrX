@@ -480,6 +480,7 @@ static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_
   Tnode *best_node2 =  generateMoves (node, &tmp_board, next_queue, processing_queue, true);
   best_node = (best_node>best_node2)?(best_node):(best_node2);
   accumulateScoreIntoParents (search_tree_root, best_node, getNodeBoardValue (best_node));
+  computeChildrenInitialRanks (node);
 
   return best_node;
 }
@@ -541,12 +542,14 @@ static void *bot_TetrX (void *_bot) {
       // Get the best immediate child
       Tnode *best_child;
       float best_score = -1.0/0.0;
+      Tbyte best_index;
       for (Tbyte i = 0; i < getNodeNbOfChildren (search_tree); i++) {
         Tnode *best_child_candidate = getNodeIthChild (search_tree, i);
         float score_candidate = getNodeAccumulatedBoardValue (best_child_candidate)/getNodeNbOfAccumulations (best_child_candidate);
         if (score_candidate > best_score) {
           best_score = score_candidate;
           best_child = best_child_candidate;
+          best_index = i;
         }
       }
 
@@ -563,7 +566,7 @@ static void *bot_TetrX (void *_bot) {
       // Reset the flag
       setShouldOutputPieceFlag (bot, false);
       // Advance to think on the next board state
-      setNodeIthChild (search_tree, getNodeChildID (best_child), NULL);
+      setNodeIthChild (search_tree, best_index, NULL);
       freeNode (search_tree);
       search_tree = best_child;
       advanceNextQueue (&global_next_queue);
