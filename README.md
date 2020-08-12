@@ -13,7 +13,7 @@ Switching to C is also an opportunity to :
 - Clone the project in whatever directory you like
 - `cd` into the directory
 - Run the command `make TetrX` to compile the program
-- To launch the game run `./bin/TetrX`.
+- To launch the game run `./bin/TetrX <bot|human>`.
 
 ## To do
 ### General
@@ -22,7 +22,6 @@ Switching to C is also an opportunity to :
 - Read the different options from a text file at runtime
 - Separate game & bot data structs more
 ### Game
-- Make a versus mode
 - Implement gravity
 - Implement lock delay
 - Implement T-spin detection

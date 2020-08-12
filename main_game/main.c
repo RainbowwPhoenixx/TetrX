@@ -3,55 +3,33 @@
 #include "../bot/bot.h"
 #include "singleplayer_mode.h"
 #include <stdio.h>
+#include <string.h>
 
 Tinterface_out IO_out;
 Tinterface_in IO_in;
 
-int getGamemode () {
-  int choix = 0;
-
-  while (choix != 1) {
-    printf("Which gamemode ?\n");
-    printf("1. Singleplayer\n");
-    printf("2. 2-player (unavailable)\n");
-
-    {int r = scanf("%d", &choix);} // Get returned value
-  }
-
-  return choix;
-}
-
-int getPlayerType (char *question) {
-  int choix = 0;
-
-  while (choix > 2 || choix < 1) {
-    printf("%s\n", question);
-    printf("1. Human\n");
-    printf("2. Bot\n");
-
-    {int r = scanf("%d", &choix);} // Get returned value
-  }
-
-  return choix;
+void displayHelpAndExit () {
+  printf("Usage :\n$ ./TetrX <Player type>\n\n");
+  printf("Where 'Player type' is either 'bot' or 'human'\n");
+  exit(0);
 }
 
 int main(int argc, char const *argv[]) {
+  
+  if (argc != 2) {
+    displayHelpAndExit ();
+  }
+  
+  if (strcmp(argv[1], "bot") == 0) {
+    IO_in = getBotInterface();
+  } else if (strcmp(argv[1], "human") == 0) {
+    IO_in = getTerminalInterfaceIn ();
+  } else {
+    displayHelpAndExit();
+  }
 
   IO_out = getTerminalInterfaceOut ();
-  switch (getGamemode()) {
-    case 1: ;
-      switch (getPlayerType ("Please enter the player type")) {
-        case 1: ;
-          IO_in = getTerminalInterfaceIn ();
-        break;
-        case 2: ;
-          IO_in = getBotInterface();
-        break;
-      }
-
-      playSingleplayer();
-    break;
-  }
+  playSingleplayer();
 
   return 0;
 }
