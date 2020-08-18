@@ -8,9 +8,6 @@
 #endif
 
 #define ABS(val) (((val)<0)?(-(val)):(val))
-// float accumulation_weights[20] = {1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9, 1/10, 1/11, 1/12, 1/13, 1/14, 1/15, 1/16, 1/17, 1/17, 1/19, 1/20};
-// float accumulation_weights[20] = {1, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256, 1/256};
-float accumulation_weights[20] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
 // Accessors
 bool getShouldOutputPieceFlag (Tbot *bot) {
@@ -266,14 +263,16 @@ static void evaluateNode (Tnode *node) {
   explored_nodes++;
   #endif
 }
-static void accumulateScoreIntoParents (Tnode *highest_parent, Tnode *node, float score) {
-  Tnode *tmp_node = node;
-  Tbyte link_level = 0;
-
-  while (tmp_node != highest_parent) {
-    setNodeAccumulatedBoardValue (tmp_node, getNodeAccumulatedBoardValue (tmp_node) + score * accumulation_weights[link_level]);
-    tmp_node = getNodeImmediateParent (tmp_node);
-    link_level++;
+static void backpropagateScore (Tnode *tree_root, Tnode *best_node) {
+  Tnode *current_node = best_node;
+  float acc_score = getNodeBoardValue (best_node);
+  setNodeAccumulatedBoardValue (best_node, acc_score);
+  
+  acc_score += getNodeBoardValue (current_node);
+  while ((current_node != tree_root) && (getNodeAccumulatedBoardValue(current_node) < acc_score)) {
+    setNodeAccumulatedBoardValue (current_node, acc_score);
+    current_node = getNodeImmediateParent (current_node);
+    acc_score = getNodeBoardValue (current_node) + acc_score;
   }
 }
 static Tnode *addNode(Tnode *parent, Tbot_movement *moves, Tbyte nb_of_moves, Tnext_queue *next_queue) {
@@ -503,7 +502,7 @@ static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_
   botApplyInput (&tmp_board, next_queue, BOT_MV_HOLD);
   Tnode *best_node2 =  generateMoves (node, &tmp_board, next_queue, processing_queue, true);
   best_node = (best_node>best_node2)?(best_node):(best_node2);
-  accumulateScoreIntoParents (search_tree_root, best_node, getNodeBoardValue (best_node));
+  backpropagateScore (search_tree_root, best_node);
   computeChildrenInitialRanks (node);
 
   return best_node;
@@ -569,7 +568,7 @@ static void *bot_TetrX (void *_bot) {
       Tbyte best_index;
       for (Tbyte i = 0; i < getNodeNbOfChildren (search_tree); i++) {
         Tnode *best_child_candidate = getNodeIthChild (search_tree, i);
-        float score_candidate = getNodeAccumulatedBoardValue (best_child_candidate)/getNodeNbOfAccumulations (best_child_candidate);
+        float score_candidate = getNodeAccumulatedBoardValue (best_child_candidate);
         if (score_candidate > best_score) {
           best_score = score_candidate;
           best_child = best_child_candidate;
