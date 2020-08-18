@@ -337,16 +337,12 @@ static bool isRestingOnBlock (Tbot_board *board, Ttetrimino* t) {
 
   return res;
 }
-static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *next_queue, Tnode_queue *processing_queue, bool should_insert_hold_move) {
+static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *next_queue, Tnode_queue *processing_queue, bool should_insert_hold_move) {
   // Generates all the possible moves form the given board state and adds them to the queue
-  // Returns the best node found
   // Current implementation : Dijkstra
 
   // Possible optimizations :
   // - Reduce matrix height because you can't actually pathfind up
-
-  float best_score = -1.0/0.0; // Init to -infty
-  Tnode *best_final_node;
 
   // Move set that the pathfinder can use & durantion estimates for them
   Tbyte move_set_size = 5;
@@ -453,10 +449,6 @@ static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue
 
       Tnode *new_node = addNode (parent, moves, final_nb_of_moves, next_queue);
       addToNodeQueue (processing_queue, new_node);
-      if (getNodeBoardValue (new_node) > best_score) {
-        best_score = getNodeBoardValue (new_node);
-        best_final_node = new_node;
-      }
     }
     // Stop if necessary (queue is empty)
     // Repeat with a new node
@@ -472,40 +464,37 @@ static Tnode *generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue
       }
     }
   }
-
-  return best_final_node;
+  
 }
-static Tnode *expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_queue, Tnode_queue *processing_queue) {
-  // Generate the possible moves from the given node, and assign them a score
-  // Return the best generated node
-  // Returns NULL if children were already generated or max depth is reached
+static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_queue, Tnode_queue *processing_queue) {
+  // Generate the possible moves from the given node, and assigns them a score
 
   Tnode *node = getFromNodeQueue (processing_queue);
   // If max previews is reached, don't compute
   if (node == NULL ||
       (depth = getBotBoardNextQueueOffset (getNodeBotBoard (node)) - getBotBoardNextQueueOffset (getNodeBotBoard (search_tree_root))) >= bot->max_previews) {
-    return NULL;
+    return;
   }
 
   if (getNodeAreChildrenGenerated (node)) {
     for (unsigned short i = 0; i < getNodeNbOfChildren (node); i++) {
       addToNodeQueue (processing_queue, getNodeIthChild (node, i));
     }
-    return NULL;
+    return;
   }
   setNodeAreChildrenGenerated (node, true);
 
   Tbot_board tmp_board;
   copyBotBoard (&tmp_board, getNodeBotBoard (node));
   botPopTetriminoFromQueue (&tmp_board, next_queue);
-  Tnode *best_node = generateMoves (node, &tmp_board, next_queue, processing_queue, false);
+  generateMoves (node, &tmp_board, next_queue, processing_queue, false);
   botApplyInput (&tmp_board, next_queue, BOT_MV_HOLD);
-  Tnode *best_node2 =  generateMoves (node, &tmp_board, next_queue, processing_queue, true);
-  best_node = (best_node>best_node2)?(best_node):(best_node2);
-  backpropagateScore (search_tree_root, best_node);
+  generateMoves (node, &tmp_board, next_queue, processing_queue, true);
+  
+  // Backpropagate the score of the best node (at index 0 since nodes are sorted)
+  backpropagateScore (search_tree_root, getNodeIthChild (node, 0));
   computeChildrenInitialRanks (node);
 
-  return best_node;
 }
 
 // Various processing functions

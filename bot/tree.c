@@ -47,10 +47,23 @@ Tnode *getNodeIthChild (Tnode *node, unsigned short i) {
   return node->children[i];
 }
 void addChildToNode (Tnode *node, Tnode *new_child) {
-  Tbyte i = node->nb_of_children;
+  // Add as a sorted list, using naive approach
+  // Binary search might be used later for performance
   if (new_child != NULL) {
-    node->children[i] = new_child;
-    setNodeChildID (new_child, i);
+    Tbyte n = node->nb_of_children;
+    Tnode **children = node->children;
+    float target_score = getNodeBoardValue (new_child);
+    int insert_index = 0;
+    
+    while ((insert_index < n) && (getNodeBoardValue (children[insert_index]) > target_score)) {
+      insert_index++;
+    }
+    
+    for (int i = n-1; i > insert_index-1; i--) {
+      children[i+1] = children[i];
+    }
+    // Insert in the array
+    node->children[insert_index] = new_child;
     node->nb_of_children++;
   }
 }
@@ -102,6 +115,7 @@ Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tbot_movement *moves, Tn
   setNodeAreChildrenGenerated (tree, false);
   setNodeNbOfChildren (tree, 0);
   setNodeImmediateParent (tree, parent);
+  setNodeAccumulatedBoardValue (tree, -1.0/0.0);
 
   for (int i = 0; i < nb_of_moves; i++) {
     setNodeIthMove (tree, i,  moves[i]);
