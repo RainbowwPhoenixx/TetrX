@@ -25,7 +25,6 @@ typedef struct _Tnode {
   struct _Tnode* children[MAX_CHILDREN];
   bool are_children_generated;
   float accumulated_board_value;
-  unsigned short number_of_accumulations;
 
   // Parent related variables
   unsigned short initial_rank;

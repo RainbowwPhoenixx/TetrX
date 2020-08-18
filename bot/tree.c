@@ -77,14 +77,6 @@ float getNodeAccumulatedBoardValue (Tnode *node) {
 }
 void setNodeAccumulatedBoardValue (Tnode *node, float new_acc_value) {
   node->accumulated_board_value = new_acc_value;
-  increaseNodeNbOfAccumulations (node);
-}
-
-unsigned int getNodeNbOfAccumulations (Tnode *node) {
-  return node->number_of_accumulations;
-}
-void increaseNodeNbOfAccumulations (Tnode *node) {
-  node->number_of_accumulations++;
 }
 
 unsigned short getNodeInitialRank (Tnode *node) {
@@ -108,7 +100,6 @@ Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tbot_movement *moves, Tn
   setNodeBotBoard (tree, board);
   setNodeNbOfMoves (tree, nb_of_moves);
   setNodeAreChildrenGenerated (tree, false);
-  tree->number_of_accumulations = 0;
   setNodeNbOfChildren (tree, 0);
   setNodeImmediateParent (tree, parent);
 
