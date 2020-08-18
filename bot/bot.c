@@ -140,33 +140,39 @@ static void computeHeights (Tbot_board *board, Tcoordinate *column_heights) {
     column_heights [i] = j+1;
   }
 }
-static float computeBumpiness (Tcoordinate *column_heights) {
+static float computeBumpiness (Tcoordinate *column_heights, int well) {
+  // Compute the bumpiness of the field while ignoring the well column
+  
   int bumpiness = 0;
   int diff;
-  for (Tcoordinate i = 1; i < BOT_MATRIX_WIDTH-2; i++) {
-    diff = column_heights [i] - column_heights[i+1];
+
+  for (Tcoordinate i = 0; i < well-2; i++) {
+    diff = column_heights[i] - column_heights[i+1];
     bumpiness += ABS(diff);
   }
-  // Special cases for the edges of the board
-  diff = column_heights [0] - column_heights[1];
-  bumpiness += 2*ABS(diff);
-  diff = column_heights [BOT_MATRIX_WIDTH-2] - column_heights[BOT_MATRIX_WIDTH-1];
-  bumpiness += 2*ABS(diff);
+  
+  for (Tcoordinate i = well+1; i < BOT_MATRIX_WIDTH-1; i++) {
+    diff = column_heights[i] - column_heights[i+1];
+    bumpiness += ABS(diff);
+  }
 
   return (float) bumpiness;
 }
-static float computeBumpinessSquared (Tcoordinate *column_heights) {
+static float computeBumpinessSquared (Tcoordinate *column_heights, int well) {
+  // Compute the bumpiness variance of the field while ignoring the well column
+  
   int bumpiness = 0;
   int diff;
-  for (Tcoordinate i = 1; i < BOT_MATRIX_WIDTH-2; i++) {
-    diff = column_heights [i] - column_heights[i+1];
+
+  for (Tcoordinate i = 0; i < well-2; i++) {
+    diff = column_heights[i] - column_heights[i+1];
     bumpiness += ABS(diff*diff);
   }
-  // Special cases for the edges of the board
-  diff = column_heights [0] - column_heights[1];
-  bumpiness += 2*ABS(diff*diff);
-  diff = column_heights [BOT_MATRIX_WIDTH-2] - column_heights[BOT_MATRIX_WIDTH-1];
-  bumpiness += 2*ABS(diff*diff);
+  
+  for (Tcoordinate i = well+1; i < BOT_MATRIX_WIDTH-1; i++) {
+    diff = column_heights[i] - column_heights[i+1];
+    bumpiness += ABS(diff*diff);
+  }
 
   return (float) bumpiness;
 }
@@ -208,11 +214,13 @@ static void evaluateNode (Tnode *node) {
   // Potential future criteria : time, swag, damage, damage/line, death
 
   float landing_height = (float) getTetriminoY (getBotBoardActiveTetrimino(board));
-  float max_height_score = computeMaxHeight (heights) - 5;
+  int max_height = computeMaxHeight (heights);
+  float max_height_score = max_height - 5;
   float avrg_height_score = computeAvrgHeight (heights) - 6;
   float lines_score, spin_score = 0;
   Tline_clear lines_cleared = getNodeLinesCleared(node);
 
+  // Line clear bonus
   switch (lines_cleared.nb_of_lines) {
     case 0: lines_score = 0;  break;
     case 1: lines_score = -25;  break;
@@ -222,19 +230,35 @@ static void evaluateNode (Tnode *node) {
     default: lines_score = 0; break;
   }
 
+  // Tspin bonus
   if (lines_cleared.attack_kind == TSPIN) {
     spin_score = 500*lines_cleared.nb_of_lines;
   }
+  
+  // Well detection
+  int well = 0;
+  for (int i = 0; i < C_MATRIX_WIDTH; i++) {
+    if (heights[well] > heights[i]) {
+      well = i;
+    }
+  }
 
-  float score = 0.0;
+  // The score needs to be on average positive for the best nodes for MCTS
+  // so it is initialized with a non 0 value.
+  float score = 50.0;
   score += lines_score;
   score += spin_score;
-  score += -2*landing_height;
+  score += -5*landing_height;
   score += -1*ABS(max_height_score);
-  score += -7*ABS(avrg_height_score);
-  score += -1*computeBumpiness (heights);
-  // score += -.05*computeBumpinessSquared (heights);
+  score += -5*ABS(avrg_height_score);
+  score += -.8*computeBumpiness (heights, well);
+  score += -.05*computeBumpinessSquared (heights, well);
   score += -100*computeNumberOfHoles (board, heights);
+  
+  // PC bonus
+  if (max_height == 0) {
+    score += 1000;
+  }
 
   setNodeBoardValue (node, score);
 
