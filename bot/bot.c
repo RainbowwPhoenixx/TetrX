@@ -7,6 +7,8 @@
 #define LOGFILE "bot_debug.log"
 #endif
 
+#define MAX(a, b) (((a)>(b))?(a):(b))
+#define MIN(a, b) (((a)<(b))?(a):(b))
 #define ABS(val) (((val)<0)?(-(val)):(val))
 
 // Accessors
@@ -109,7 +111,7 @@ void setNewPiecesReadyFlag (Tbot *bot, bool new_flag) {
   bot->new_pieces_ready_flag = new_flag;
 }
 
-Tbyte depth = 0;
+Tbyte log_depth = 0;
 #ifdef LOG_BOT_THINKING
 // Debug functions
 int explored_nodes = 0;
@@ -120,7 +122,7 @@ void logBestNode (FILE *logfile, Tnode *node) {
   fprintf(logfile, "Piece : %d, %d, %d, %d\n", getTetriminoShape (tet), getTetriminoX (tet), getTetriminoY (tet), getTetriminoRotationState (tet));
   Tline_clear lines = getNodeLinesCleared (node);
   fprintf(logfile, "Attack : lines: %d \t type: %d\n", lines.nb_of_lines, lines.attack_kind);
-  fprintf(logfile, "Thinking depth : %d\n", depth);
+  fprintf(logfile, "Thinking log_depth : %d\n", log_depth);
   fprintf(logfile, "Explored nodes : %d\n", explored_nodes);
   fprintf(logfile, "\n");
   fflush (logfile);
@@ -470,9 +472,14 @@ static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_qu
   // Generate the possible moves from the given node, and assigns them a score
 
   Tnode *node = getFromNodeQueue (processing_queue);
+  if (node == NULL) {
+    return;
+  }
+  
   // If max previews is reached, don't compute
-  if (node == NULL ||
-      (depth = getBotBoardNextQueueOffset (getNodeBotBoard (node)) - getBotBoardNextQueueOffset (getNodeBotBoard (search_tree_root))) >= bot->max_previews) {
+  Tbyte depth = getBotBoardNextQueueOffset (getNodeBotBoard (node)) - getBotBoardNextQueueOffset (getNodeBotBoard (search_tree_root));
+  log_depth = MAX (log_depth, depth);
+  if (depth >= bot->max_previews) {
     return;
   }
 
@@ -568,6 +575,7 @@ static void *bot_TetrX (void *_bot) {
       #ifdef LOG_BOT_THINKING
       logBestNode (logfile, best_child);
       explored_nodes = 0;
+      log_depth = 0;
       #endif
 
       // Output the moves of the next piece of the best path found
