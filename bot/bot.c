@@ -11,7 +11,7 @@
 #define MIN(a, b) (((a)<(b))?(a):(b))
 #define ABS(val) (((val)<0)?(-(val)):(val))
 
-// Accessors
+// Flag accessors for communication between threads
 bool getShouldOutputPieceFlag (Tbot *bot) {
   // Returns true if the should_output_piece_flag is set to true.
   // Returns false if the should_output_piece_flag is set to false.
@@ -20,28 +20,6 @@ bool getShouldOutputPieceFlag (Tbot *bot) {
 void setShouldOutputPieceFlag (Tbot *bot, bool new_flag) {
   bot->should_output_piece_flag = new_flag;
 }
-// bool getShouldOutputPieceFlagTry (Tbot *bot) {
-//   // Returns true if the should_output_piece_flag is set to true.
-//   // Returns false if the should_output_piece_flag is set to false.
-//   // Returns false is a lock could not be acquired for the flag
-//   // (So that the bot can keep thinking until the lock becomes available)
-//   if (pthread_mutex_trylock (&(bot->should_output_piece_mutex)) == 0) {
-//     bool res = bot->should_output_piece_flag;
-//     pthread_mutex_unlock (&(bot->should_output_piece_mutex));
-//     return res;
-//   } else return false;
-// }
-// bool getShouldOutputPieceFlagWait (Tbot *bot) {
-//   pthread_mutex_lock (&(bot->should_output_piece_mutex));
-//   bool res = bot->should_output_piece_flag;
-//   pthread_mutex_unlock (&(bot->should_output_piece_mutex));
-//   return res;
-// }
-// void setShouldOutputPieceFlagWait (Tbot *bot, bool new_flag) {
-//   pthread_mutex_lock (&(bot->should_output_piece_mutex));
-//   bot->should_output_piece_flag = new_flag;
-//   pthread_mutex_unlock (&(bot->should_output_piece_mutex));
-// }
 
 bool getOutputPieceReadyFlag (Tbot *bot) {
   return bot->output_piece_ready_flag;
@@ -49,24 +27,6 @@ bool getOutputPieceReadyFlag (Tbot *bot) {
 void setOutputPieceReadyFlag (Tbot *bot, bool new_flag) {
   bot->output_piece_ready_flag = new_flag;
 }
-// bool getOutputPieceReadyFlagTry (Tbot *bot) {
-//   if (pthread_mutex_trylock (&(bot->output_piece_ready_mutex)) == 0) {
-//     bool res = bot->output_piece_ready_flag;
-//     pthread_mutex_unlock (&(bot->output_piece_ready_mutex));
-//     return res;
-//   } else return false;
-// }
-// bool getOutputPieceReadyFlagWait (Tbot *bot) {
-//   pthread_mutex_lock (&(bot->output_piece_ready_mutex));
-//   bool res = bot->output_piece_ready_flag;
-//   pthread_mutex_unlock (&(bot->output_piece_ready_mutex));
-//   return res;
-// }
-// void setOutputPieceReadyFlagWait (Tbot *bot, bool new_flag) {
-//   pthread_mutex_lock (&(bot->output_piece_ready_mutex));
-//   bot->output_piece_ready_flag = new_flag;
-//   pthread_mutex_unlock (&(bot->output_piece_ready_mutex));
-// }
 
 bool getShouldResetSearchFlag (Tbot *bot) {
   return bot->should_reset_search_flag;
@@ -74,17 +34,6 @@ bool getShouldResetSearchFlag (Tbot *bot) {
 void setShouldResetSearchFlag (Tbot *bot, bool new_flag) {
   bot->should_reset_search_flag = new_flag;
 }
-// bool getShouldResetSearchFlagWait (Tbot *bot) {
-//   pthread_mutex_lock (&(bot->should_reset_search_mutex));
-//   bool res = bot->should_reset_search_flag;
-//   pthread_mutex_unlock (&(bot->should_reset_search_mutex));
-//   return res;
-// }
-// void setShouldResetSearchFlagWait (Tbot *bot, bool new_flag) {
-//   pthread_mutex_lock (&(bot->should_reset_search_mutex));
-//   bot->should_reset_search_flag = new_flag;
-//   pthread_mutex_unlock (&(bot->should_reset_search_mutex));
-// }
 
 bool getShouldEndBotFlag (Tbot *bot) {
   return bot->should_end_bot_flag;
@@ -92,17 +41,6 @@ bool getShouldEndBotFlag (Tbot *bot) {
 void setShouldEndBotFlag (Tbot *bot, bool new_flag) {
   bot->should_end_bot_flag = new_flag;
 }
-// bool getShouldEndBotFlagWait (Tbot *bot) {
-//   pthread_mutex_lock (&(bot->should_end_bot_mutex));
-//   bool res = bot->should_end_bot_flag;
-//   pthread_mutex_unlock (&(bot->should_end_bot_mutex));
-//   return res;
-// }
-// void setShouldEndBotFlagWait (Tbot *bot, bool new_flag) {
-//   pthread_mutex_lock (&(bot->should_end_bot_mutex));
-//   bot->should_end_bot_flag = new_flag;
-//   pthread_mutex_unlock (&(bot->should_end_bot_mutex));
-// }
 
 bool getNewPiecesReadyFlag (Tbot *bot) {
   return bot->new_pieces_ready_flag;
