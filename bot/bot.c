@@ -60,6 +60,11 @@ void logBestNode (FILE *logfile, Tnode *node) {
   fprintf(logfile, "Piece : %d, %d, %d, %d\n", getTetriminoShape (tet), getTetriminoX (tet), getTetriminoY (tet), getTetriminoRotationState (tet));
   Tline_clear lines = getNodeLinesCleared (node);
   fprintf(logfile, "Attack : lines: %d \t type: %d\n", lines.nb_of_lines, lines.attack_kind);
+  fprintf(logfile, "Moves : ");
+  for (int i = 0; i < node->nb_of_moves; i++) {
+    fprintf(logfile, "%d ", node->moves[i]);
+  }
+  fprintf(logfile, "\n");
   fprintf(logfile, "Thinking log_depth : %d\n", log_depth);
   fprintf(logfile, "Explored nodes : %d\n", explored_nodes);
   fprintf(logfile, "\n");
