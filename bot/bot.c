@@ -464,6 +464,7 @@ static void translate_moves (Tbot_movement *src_moves, Tbyte src_nb_of_moves,Tmo
       case BOT_MV_SONICD : new_move = 0         ; break;
       case BOT_MV_HD     : new_move = MV_HD     ; break;
       case BOT_MV_HOLD   : new_move = MV_HOLD   ; break;
+      default            : new_move = 0;
     }
 
     dest_moves[*dest_nb_of_moves] = new_move;
