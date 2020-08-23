@@ -362,6 +362,7 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
         reverse_moves[nb_of_moves] = current_path_backtrack->move;
         nb_of_moves++;
       } while((current_path_backtrack = current_path_backtrack->best_parent));
+      nb_of_moves--; // To account for the initial node having no moves
 
       if (should_insert_hold_move) {
         reverse_moves[nb_of_moves] = BOT_MV_HOLD;
