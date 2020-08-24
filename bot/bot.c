@@ -1,7 +1,9 @@
 #include "bot.h"
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "bot_parameters.h"
+#include "MC_weights.h"
 
 #ifdef LOG_BOT_THINKING
 #define LOGFILE "bot_debug.log"
@@ -282,7 +284,7 @@ static bool isRestingOnBlock (Tbot_board *board, Ttetrimino* t) {
 
   return res;
 }
-static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *next_queue, Tnode_queue *processing_queue, bool should_insert_hold_move) {
+static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *next_queue, bool should_insert_hold_move) {
   // Generates all the possible moves form the given board state and adds them to the queue
   // Current implementation : Dijkstra
 
@@ -393,8 +395,7 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
       }
       moves[final_nb_of_moves++] = BOT_MV_HD;
 
-      Tnode *new_node = addNode (parent, moves, final_nb_of_moves, next_queue);
-      addToNodeQueue (processing_queue, new_node);
+      addNode (parent, moves, final_nb_of_moves, next_queue);
     }
     // Stop if necessary (queue is empty)
     // Repeat with a new node
@@ -412,10 +413,29 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
   }
   
 }
-static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_queue, Tnode_queue *processing_queue) {
+static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_queue, struct drand48_data *RNG_data) {
   // Generate the possible moves from the given node, and assigns them a score
 
-  Tnode *node = getFromNodeQueue (processing_queue);
+  // Node selection
+  // Repeat until a node has no generated children
+  Tnode *current_node_selection = search_tree_root;
+  while (getNodeAreChildrenGenerated (current_node_selection)) {
+    Tbyte max_index = getNodeNbOfChildren (current_node_selection);
+    // RNG
+    double random_float;
+    drand48_r (RNG_data, &random_float);
+    // Scale the float to the maximum reachable probability
+    random_float *= choice_weights[max_index-1];
+    
+    // Turn float into an index
+    Tbyte index = 0;
+    while (random_float > choice_weights[index+1]) {
+      index++;
+    }
+    current_node_selection = getNodeIthChild(current_node_selection, index);
+  }
+  Tnode *node = current_node_selection;
+  
   if (node == NULL) {
     return;
   }
@@ -432,9 +452,9 @@ static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_qu
   Tbot_board tmp_board;
   copyBotBoard (&tmp_board, getNodeBotBoard (node));
   botPopTetriminoFromQueue (&tmp_board, next_queue);
-  generateMoves (node, &tmp_board, next_queue, processing_queue, false);
+  generateMoves (node, &tmp_board, next_queue, false);
   botApplyInput (&tmp_board, next_queue, BOT_MV_HOLD);
-  generateMoves (node, &tmp_board, next_queue, processing_queue, true);
+  generateMoves (node, &tmp_board, next_queue, true);
   
   // Backpropagate the score of the best node (at index 0 since nodes are sorted)
   backpropagateScore (search_tree_root, getNodeIthChild (node, 0));
@@ -486,8 +506,9 @@ static void *bot_TetrX (void *_bot) {
   Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
   Tnext_queue global_next_queue = createNextQueue ();
   copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
-  Tnode_queue processing_queue = createNodeQueue ();
-  addToNodeQueue (&processing_queue, search_tree);
+  // Init the PRNG for random node selection
+  struct drand48_data RNG_data;
+  srand48_r(time(0), &RNG_data);
 
   #ifdef LOG_BOT_THINKING
   // Setting up the log file for debugging
@@ -530,10 +551,6 @@ static void *bot_TetrX (void *_bot) {
       search_tree = best_child;
       advanceNextQueue (&global_next_queue);
       reduceNextPieceOffset (search_tree);
-      // Resetting the queue
-      freeNodeQueue (&processing_queue);
-      processing_queue = createNodeQueue ();
-      addToNodeQueue (&processing_queue, search_tree);
     }
     if (getShouldResetSearchFlag (bot)) {
       // Free the current search tree
@@ -541,10 +558,6 @@ static void *bot_TetrX (void *_bot) {
       // Get the new values
       search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
       copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
-      // Reset the processing queue
-      freeNodeQueue (&processing_queue);
-      processing_queue = createNodeQueue ();
-      addToNodeQueue (&processing_queue, search_tree);
       // Reset the flag
       setShouldResetSearchFlag (bot, false);
     }
@@ -559,8 +572,8 @@ static void *bot_TetrX (void *_bot) {
 
     // Do the thinking
     // If queue is not empty, try expanding the new node, else pause for a bit
-    if (getNodeQueueSize (&processing_queue) > 0) {
-      expandNode (bot, search_tree, &global_next_queue, &processing_queue);
+    if (true) {
+      expandNode (bot, search_tree, &global_next_queue, &RNG_data);
     } else {usleep (1000);}
     // Generate the moves, compute their value, and put them in the queue
   }
@@ -571,7 +584,6 @@ static void *bot_TetrX (void *_bot) {
   #endif
 
   // Free the memory
-  freeNodeQueue (&processing_queue);
   freeNode (search_tree);
 
   return NULL;
