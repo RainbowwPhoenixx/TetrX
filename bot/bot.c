@@ -422,17 +422,11 @@ static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_qu
   
   // If max previews is reached, don't compute
   Tbyte depth = getBotBoardNextQueueOffset (getNodeBotBoard (node)) - getBotBoardNextQueueOffset (getNodeBotBoard (search_tree_root));
-  log_depth = MAX (log_depth, depth);
   if (depth >= bot->max_previews) {
     return;
   }
-
-  if (getNodeAreChildrenGenerated (node)) {
-    for (unsigned short i = 0; i < getNodeNbOfChildren (node); i++) {
-      addToNodeQueue (processing_queue, getNodeIthChild (node, i));
-    }
-    return;
-  }
+  log_depth = MAX (log_depth, depth);
+  
   setNodeAreChildrenGenerated (node, true);
 
   Tbot_board tmp_board;
