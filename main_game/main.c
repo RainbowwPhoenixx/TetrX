@@ -28,6 +28,8 @@ int main(int argc, char const *argv[]) {
     displayHelpAndExit();
   }
 
+  printf("Press any key to start ");
+  getchar();
   IO_out = getTerminalInterfaceOut ();
   playSingleplayer();
 
