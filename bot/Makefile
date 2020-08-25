@@ -1,5 +1,5 @@
 object_dir = ../obj/
-all_targets = bot_types.o tree.o move_queue.o node_queue.o bot.o
+all_targets = bot_types.o tree.o move_queue.o bot.o
 all_debug_targets = $(all_targets:.o=_debug.o)
 
 # Tell make to not delete the files

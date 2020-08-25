@@ -10,7 +10,7 @@ linking_flags = -lncurses -lpthread `sdl2-config --cflags --libs`
 all_tetris_engine_targets := $(addprefix $(object_dir), general_library.o type_shape.o type_movement.o type_mino.o type_next_queue.o type_matrix.o type_tetrimino.o type_board.o board_operations.o)
 all_interface_targets := $(addprefix $(object_dir), terminal_interface.o)
 all_gamemodes_targets := $(addprefix $(object_dir), singleplayer_mode.o)
-all_bot_targets := $(addprefix $(object_dir), bot_types.o tree.o move_queue.o node_queue.o bot.o)
+all_bot_targets := $(addprefix $(object_dir), bot_types.o tree.o move_queue.o bot.o)
 all_tetris_engine_debug_targets := $(all_tetris_engine_targets:.o=_debug.o)
 all_interface_debug_targets := $(all_interface_targets:.o=_debug.o)
 all_gamemodes_debug_targets := $(all_gamemodes_targets:.o=_debug.o)
