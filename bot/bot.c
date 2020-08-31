@@ -293,7 +293,7 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
 
   // Move set that the pathfinder can use & durantion estimates for them
   Tbyte move_set_size = 5;
-  Tbot_movement move_set[] = {BOT_MV_LEFT, BOT_MV_RIGHT, BOT_MV_CW, BOT_MV_CCW, BOT_MV_SONICD};
+  Tbot_movement move_set[] = {BOT_MV_CW, BOT_MV_CCW, BOT_MV_LEFT, BOT_MV_RIGHT, BOT_MV_SONICD};
   Tbyte move_distances[] = {2, 2, 2, 2, 10}; // Sonic drop cost is calculated at the end
 
   // Node currently being examined
@@ -331,7 +331,7 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
       TMoveNode* potential_new_neighbour = createMoveNode (move_set[i], &(current->tetrimino), current->dist + move_distances[i], current);
       Ttetrimino* new_tetrimino = &(potential_new_neighbour->tetrimino);
       applyBotMoveToTetrimino (move_set[i], new_tetrimino, board_state);
-
+      
       // If node is not visited & is not an obstacle
       if (isNotObstacle (board_state, new_tetrimino)
           && !visited[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)]) {
