@@ -465,14 +465,82 @@ bool isNotObstacle (Tbot_board* b, Ttetrimino* t) {
 
   return res;
 }
+static void pathfinderPerformMoveLeft (Tbot_board *b, Ttetrimino *t) {
+  moveTetriminoLeft (t);
+}
+static void pathfinderPerformMoveRight (Tbot_board *b, Ttetrimino *t) {
+  moveTetriminoRight (t);
+}
+static void pathfinderPerformRotateCW (Tbot_board *b, Ttetrimino *t) {
+  // If the piece is not an O (the O does not rotate)
+  if (getTetriminoShape (t) == O) {
+    return;
+  }
+
+  Tcoordinate_diff (*kicks)[2];
+
+  // Get the kicks for the avtive piece and its rotation state
+  if (getTetriminoShape (t) == I) {
+    kicks = I_kicks[getTetriminoRotationState (t)];
+  } else {
+    kicks = not_I_kicks[getTetriminoRotationState (t)];
+  }
+
+  // Rotate the piece
+  moveTetriminoCW (t);
+  Tcoordinate init_tet_x = getTetriminoX (t);
+  Tcoordinate init_tet_y = getTetriminoY (t);
+
+  // Attempt to kick the piece
+  int i = 0;
+  do {
+    setTetriminoX (t, init_tet_x + kicks[i][0]);
+    setTetriminoY (t, init_tet_y + kicks[i][1]);
+
+    i++;
+  } while(!isNotObstacle (b, t) && i < 5);
+}
+static void pathfinderPerformRotateCCW (Tbot_board *b, Ttetrimino *t) {
+
+  // If the piece is not an O (the O does not rotate)
+  if (getTetriminoShape (t) == O) {
+    return;
+  }
+
+  Tcoordinate_diff (*kicks)[2];
+
+  // Get the kicks for the avtive piece and its rotation state
+  if (getTetriminoShape (t) == I) {
+    kicks = I_kicks[getTetriminoRotationState (t)];
+  } else {
+    kicks = not_I_kicks[getTetriminoRotationState (t)];
+  }
+
+  // Rotate the piece
+  moveTetriminoCCW (t);
+  Tcoordinate init_tet_x = getTetriminoX (t);
+  Tcoordinate init_tet_y = getTetriminoY (t);
+
+  // Attempt to kick the piece
+  int i = 0;
+  do {
+    setTetriminoX (t, init_tet_x - kicks[i][0]);
+    setTetriminoY (t, init_tet_y - kicks[i][1]);
+
+    i++;
+  } while(!isNotObstacle (b, t) && i < 5);
+}
+static void pathfinderPerformSoftDrop (Tbot_board *b, Ttetrimino *t) {
+  moveTetriminoDown (t);
+}
 void applyBotMoveToTetrimino (Tmovement mv, Ttetrimino* t, Tbot_board* board) {
   // Applies the given move to the tetrimino
   switch  (mv) {
-    case BOT_MV_LEFT:  moveTetriminoLeft  (t); break;
-    case BOT_MV_RIGHT: moveTetriminoRight (t); break;
-    case BOT_MV_CW:    moveTetriminoCW    (t); break;
-    case BOT_MV_CCW:   moveTetriminoCCW   (t); break;
-    case BOT_MV_SD:    moveTetriminoDown  (t); break;
+    case BOT_MV_LEFT:   pathfinderPerformMoveLeft  (board, t); break;
+    case BOT_MV_RIGHT:  pathfinderPerformMoveRight (board, t); break;
+    case BOT_MV_CW:     pathfinderPerformRotateCW  (board, t); break;
+    case BOT_MV_CCW:    pathfinderPerformRotateCCW (board, t); break;
+    case BOT_MV_SD:     pathfinderPerformSoftDrop  (board, t); break;
     case BOT_MV_SONICD:
       do {
         moveTetriminoDown (t);
