@@ -294,7 +294,7 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
   // Move set that the pathfinder can use & durantion estimates for them
   Tbyte move_set_size = 5;
   Tbot_movement move_set[] = {BOT_MV_CW, BOT_MV_CCW, BOT_MV_LEFT, BOT_MV_RIGHT, BOT_MV_SONICD};
-  Tbyte move_distances[] = {2, 2, 2, 2, 10}; // Sonic drop cost is calculated at the end
+  Tbyte move_distances[] = {0, 0, 0, 0, 1}; // Sonic drop cost is calculated at the end
 
   // Node currently being examined
   TMoveNode* current;
@@ -328,7 +328,11 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
   while ((current = popMinMoveNodeFromList (&unvisited_move_nodes))) {
     // Consider/generate all unvisited neighbours and set their dist
     for (Tbyte i = 0; i < move_set_size; i++) {
-      TMoveNode* potential_new_neighbour = createMoveNode (move_set[i], &(current->tetrimino), current->dist + move_distances[i], current);
+      float new_distance = current->dist + move_distances[i];
+      if (current->best_parent && (current->best_parent->move == BOT_MV_SONICD)) {
+        new_distance += 2 * (getTetriminoY (&current->best_parent->best_parent->tetrimino) - getTetriminoY (&current->best_parent->tetrimino));
+      }
+      TMoveNode* potential_new_neighbour = createMoveNode (move_set[i], &(current->tetrimino), new_distance, current);
       Ttetrimino* new_tetrimino = &(potential_new_neighbour->tetrimino);
       applyBotMoveToTetrimino (move_set[i], new_tetrimino, board_state);
       
@@ -336,13 +340,13 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
       if (isNotObstacle (board_state, new_tetrimino)
           && !visited[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)]) {
         // If node is not known, create it, else compare distances and set the shortest
-        TMoveNode* neighbour = known_nodes[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)];
+        TMoveNode* neighbour = known_nodes[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][getTetriminoRotationState (new_tetrimino)];
         if (!neighbour) {
           neighbour = potential_new_neighbour;
           known_nodes[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)] = neighbour;
           addMoveNodeToList (neighbour, &unvisited_move_nodes);
         } else {
-          if (potential_new_neighbour->dist < neighbour->dist) {
+          if ((potential_new_neighbour->dist < neighbour->dist) && (current != neighbour)) {
             neighbour->dist = potential_new_neighbour->dist;
             neighbour->best_parent = current;
           }
