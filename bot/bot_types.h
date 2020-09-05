@@ -97,7 +97,7 @@ void botApplyInput (Tbot_board *b, Tnext_queue *next_queue, Tbot_movement mv);
 typedef struct _TMoveNode {
   Tbot_movement move;
   Ttetrimino tetrimino;
-  float dist; // = time taken to get there
+  Tbyte dist; // = time taken to get there
   struct _TMoveNode* best_parent;
 } TMoveNode;
 
