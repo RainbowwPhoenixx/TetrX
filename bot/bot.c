@@ -205,6 +205,7 @@ static void evaluateNode (Tnode *node) {
   }
 
   setNodeBoardValue (node, score);
+  setNodeAccumulatedBoardValue (node, score);
 
   #ifdef LOG_BOT_THINKING
   explored_nodes++;
@@ -213,13 +214,19 @@ static void evaluateNode (Tnode *node) {
 static void backpropagateScore (Tnode *tree_root, Tnode *best_node) {
   Tnode *current_node = best_node;
   float acc_score = getNodeBoardValue (best_node);
-  setNodeAccumulatedBoardValue (best_node, acc_score);
   
   acc_score += getNodeBoardValue (current_node);
   while ((current_node != tree_root) && (getNodeAccumulatedBoardValue(current_node) < acc_score)) {
+    // Update parent score
     setNodeAccumulatedBoardValue (current_node, acc_score);
     current_node = getNodeImmediateParent (current_node);
     acc_score = getNodeBoardValue (current_node) + acc_score;
+    
+    // Re-sort the node according to accumulated score
+    // Could be changed to a more naive approach that should be faster
+    // Cause we could use the fact that we could know the index of the
+    // node that is out of place (the one we just updated)
+    sortNodeChildren (current_node);
   }
 }
 static Tnode *addNode(Tnode *parent, Tbot_movement *moves, Tbyte nb_of_moves, Tnext_queue *next_queue) {
@@ -461,6 +468,7 @@ static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_qu
   generateMoves (node, &tmp_board, next_queue, true);
   
   // Backpropagate the score of the best node (at index 0 since nodes are sorted)
+  sortNodeChildren (node);
   backpropagateScore (search_tree_root, getNodeIthChild (node, 0));
   computeChildrenInitialRanks (node);
 
@@ -522,20 +530,9 @@ static void *bot_TetrX (void *_bot) {
   while (!getShouldEndBotFlag (bot)) {
     // Check all the flags
     if (getShouldOutputPieceFlag (bot) && getNodeAreChildrenGenerated (search_tree)  && !getNewPiecesReadyFlag (bot)) {
-      // Get the best immediate child
-      Tnode *best_child;
-      float best_score = -1.0/0.0;
-      Tbyte best_index;
-      for (Tbyte i = 0; i < getNodeNbOfChildren (search_tree); i++) {
-        Tnode *best_child_candidate = getNodeIthChild (search_tree, i);
-        float score_candidate = getNodeAccumulatedBoardValue (best_child_candidate);
-        if (score_candidate > best_score) {
-          best_score = score_candidate;
-          best_child = best_child_candidate;
-          best_index = i;
-        }
-      }
-
+      // Because nodes are sorted
+      Tnode *best_child = getNodeIthChild (search_tree, 0);
+      
       #ifdef LOG_BOT_THINKING
       logBestNode (logfile, best_child);
       explored_nodes = 0;
@@ -549,9 +546,10 @@ static void *bot_TetrX (void *_bot) {
       setOutputPieceReadyFlag (bot, true);
       // Reset the flag
       setShouldOutputPieceFlag (bot, false);
-      // Advance to think on the next board state
-      setNodeIthChild (search_tree, best_index, NULL);
+      // Free all the search tree except for the best node
+      setNodeIthChild (search_tree, 0, NULL);
       freeNode (search_tree);
+      // Advance to think on the next board state
       search_tree = best_child;
       advanceNextQueue (&global_next_queue);
       reduceNextPieceOffset (search_tree);

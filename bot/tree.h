@@ -69,6 +69,8 @@ void setNodeInitialRank (Tnode *node, unsigned short new_val);
 Tnode *getNodeImmediateParent (Tnode* node);
 void setNodeImmediateParent (Tnode *node, Tnode *parent);
 
+void sortNodeChildren (Tnode* node);
+
 // Constructor & destructor
 Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tbot_movement *moves, Tnode *parent);
 void freeNode (Tnode *tree);
