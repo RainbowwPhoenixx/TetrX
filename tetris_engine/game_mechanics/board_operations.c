@@ -1,7 +1,7 @@
 #include "board_operations.h"
 #include "../../interface/type_interface.h"
 
-#define MINIMUM_QUEUE_LENGTH 8
+#define MINIMUM_QUEUE_LENGTH 11
 #define MAXIMUM_AUTHORIZED_HEIGHT 20
 
 #define DAS_VALUE 10

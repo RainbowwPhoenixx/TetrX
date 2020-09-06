@@ -30,6 +30,6 @@
 // ------------------------------------------------------------------------
 
 #define BOT_MAX_MOVES 50
-#define BOT_MAX_PREVIEWS 2 // Do not set lower than 1
+#define BOT_MAX_PREVIEWS 10 // Do not set lower than 1 or higher than MINIMUM_QUEUE_LENGTH in board_operations.c
 
 #endif /* end of include guard: __BOT_PARAMETERS_H__ */
