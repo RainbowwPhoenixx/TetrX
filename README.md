@@ -22,12 +22,11 @@ Switching to C is also an opportunity to :
 - Read the different options from a text file at runtime
 - Separate game & bot data structs more
 ### Game
-- Implement gravity
-- Implement lock delay
 - Implement T-spin detection
 - Implement scoring
 - Create a recording functionality
 - Create a replay functionality
+- Keep track of line clearing stats
 ### Interface
 - Make keys configurable
 - Create a graphical interface
@@ -35,9 +34,8 @@ Switching to C is also an opportunity to :
 ### Bot
 - General type overhaul
 - Optimize pathfinder for edge cases (O piece, try hold only if not same piece)
-- Implement multiple queues with different priorities aka better tree search
+- Optimize memory copying
 - Implement more metrics for the evaluation function
 - Pattern detection
 - Better variable & type names plz
-- Sort node children by score ?
-- Fix empty move that gets inserted in pathfinder at the beginning of the move list
+- Fix Tspin detection
