@@ -344,8 +344,8 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
       applyBotMoveToTetrimino (move_set[i], new_tetrimino, board_state);
       
       // If node is not visited & is not an obstacle
-      if (isNotObstacle (board_state, new_tetrimino)
-          && !visited[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)]) {
+      if ( !visited[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)]
+          && isNotObstacle (board_state, new_tetrimino)) {
         // If node is not known, create it, else compare distances and set the shortest
         TMoveNode* neighbour = known_nodes[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][getTetriminoRotationState (new_tetrimino)];
         if (!neighbour) {

@@ -230,103 +230,80 @@ void botLockActiveTetrimino (Tbot_board *b) {
 
 // Input handlers
 static void botPerformMoveLeft (Tbot_board *b) {
-  // Save the current board state
-  Tbot_board tmp_board;
-  copyBotBoard (&tmp_board, b);
-
   // Attempt to move left
   moveTetriminoLeft (getBotBoardActiveTetrimino (b));
 
   // If the new state is not valid, revert to previous state
   if (!isBotBoardStateValid (b)) {
-    copyBotBoard (b, &tmp_board);
+    moveTetriminoRight (getBotBoardActiveTetrimino (b));
   }
 }
 static void botPerformMoveRight (Tbot_board *b) {
-  // Save the current board state
-  Tbot_board tmp_board;
-  copyBotBoard (&tmp_board, b);
-
-  // Attempt to move right
+  // Attempt to move left
   moveTetriminoRight (getBotBoardActiveTetrimino (b));
 
   // If the new state is not valid, revert to previous state
   if (!isBotBoardStateValid (b)) {
-    copyBotBoard (b, &tmp_board);
+    moveTetriminoLeft (getBotBoardActiveTetrimino (b));
   }
 }
 static void botPerformSoftDrop (Tbot_board *b) {
-  // Save the current board state
-  Tbot_board tmp_board;
-  copyBotBoard (&tmp_board, b);
-
-  // Attempt to move down
+  // Attempt to move left
   moveTetriminoDown (getBotBoardActiveTetrimino (b));
 
   // If the new state is not valid, revert to previous state
   if (!isBotBoardStateValid (b)) {
-    copyBotBoard (b, &tmp_board);
+    moveTetriminoUp (getBotBoardActiveTetrimino (b));
   }
 }
 static void botPerformHardDrop  (Tbot_board *b) {
-  // Save the current board state
-  Tbot_board tmp_board;
-  copyBotBoard (&tmp_board, b);
-
-  // Move down until tetrimino hots the ground
+  // Move down until tetrimino hits the ground
   do {
-    copyBotBoard (b, &tmp_board);
-    moveTetriminoDown (getBotBoardActiveTetrimino (&tmp_board));
-  } while(isBotBoardStateValid (&tmp_board));
+    moveTetriminoDown (getBotBoardActiveTetrimino (b));
+  } while(isBotBoardStateValid (b));
+  
+  moveTetriminoUp (getBotBoardActiveTetrimino (b));
 }
 static void botPerformRotateCW (Tbot_board *b) {
   Ttetrimino *t = getBotBoardActiveTetrimino (b);
-
+  
   // If the piece is not an O (the O does not rotate)
-  if (getTetriminoShape (t) != O) {
-    Tbot_board tmp_board;
-    Tcoordinate_diff (*kicks)[2];
-    copyBotBoard (&tmp_board, b);
-
-    // Get the kicks for the avtive piece and its rotation state
-    if (getTetriminoShape (t) == I) {
-      kicks = I_kicks[getTetriminoRotationState (t)];
-    } else {
-      kicks = not_I_kicks[getTetriminoRotationState (t)];
-    }
-
-    // Rotate the piece
-    moveTetriminoCW (t);
-    Ttetrimino piece_no_kicks = *t;
-
-    // Attempt to kick the piece
-    int i = 0;
-    do {
-      *t = piece_no_kicks;
-      setTetriminoX (t, getTetriminoX (t) + kicks[i][0]);
-      setTetriminoY (t, getTetriminoY (t) + kicks[i][1]);
-
-      i++;
-    } while(!isBotBoardStateValid (b) && i < 5);
-
-    // If the new state is not valid, revert to previous state
-    if (!isBotBoardStateValid (b)) {
-      copyBotBoard (b, &tmp_board);
-    }
+  if (getTetriminoShape (t) == O) {
+    return;
   }
+
+  Tcoordinate_diff (*kicks)[2];
+
+  // Get the kicks for the avtive piece and its rotation state
+  if (getTetriminoShape (t) == I) {
+    kicks = I_kicks[getTetriminoRotationState (t)];
+  } else {
+    kicks = not_I_kicks[getTetriminoRotationState (t)];
+  }
+
+  // Rotate the piece
+  moveTetriminoCW (t);
+  Tcoordinate init_tet_x = getTetriminoX (t);
+  Tcoordinate init_tet_y = getTetriminoY (t);
+
+  // Attempt to kick the piece
+  int i = 0;
+  do {
+    setTetriminoX (t, init_tet_x + kicks[i][0]);
+    setTetriminoY (t, init_tet_y + kicks[i][1]);
+
+    i++;
+  } while(!isBotBoardStateValid (b) && i < 5);
 }
 static void botPerformRotateCCW (Tbot_board *b) {
   Ttetrimino *t = getBotBoardActiveTetrimino (b);
 
-  // If the piece is not an O (the O does not rotate)
-  if (getTetriminoShape (t) != O) {
-    Tbot_board tmp_board;
-    Tcoordinate_diff (*kicks)[2];
-    copyBotBoard (&tmp_board, b);
+    // If the piece is not an O (the O does not rotate)
+    if (getTetriminoShape (t) == O) {
+      return;
+    }
 
-    // Rotate the piece
-    moveTetriminoCCW (t);
-    Ttetrimino piece_no_kicks = *t;
+    Tcoordinate_diff (*kicks)[2];
 
     // Get the kicks for the avtive piece and its rotation state
     if (getTetriminoShape (t) == I) {
@@ -335,21 +312,19 @@ static void botPerformRotateCCW (Tbot_board *b) {
       kicks = not_I_kicks[getTetriminoRotationState (t)];
     }
 
+    // Rotate the piece
+    moveTetriminoCCW (t);
+    Tcoordinate init_tet_x = getTetriminoX (t);
+    Tcoordinate init_tet_y = getTetriminoY (t);
+
     // Attempt to kick the piece
     int i = 0;
     do {
-      *t = piece_no_kicks;
-      setTetriminoX (t, getTetriminoX (t) - kicks[i][0]);
-      setTetriminoY (t, getTetriminoY (t) - kicks[i][1]);
+      setTetriminoX (t, init_tet_x - kicks[i][0]);
+      setTetriminoY (t, init_tet_y - kicks[i][1]);
 
       i++;
     } while(!isBotBoardStateValid (b) && i < 5);
-
-    // If the new state is not valid, revert to previous state
-    if (!isBotBoardStateValid (b)) {
-      copyBotBoard (b, &tmp_board);
-    }
-  }
 }
 static void botPerformHold (Tbot_board *b, Tnext_queue *next_queue) {
   // If player has used hold, don't hold again
