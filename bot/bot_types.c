@@ -305,17 +305,17 @@ static void botPerformRotateCCW (Tbot_board *b) {
   
   Tcoordinate_diff (*kicks)[2];
   
+  // Rotate the piece
+  moveTetriminoCCW (t);
+  Tcoordinate init_tet_x = getTetriminoX (t);
+  Tcoordinate init_tet_y = getTetriminoY (t);
+  
   // Get the kicks for the avtive piece and its rotation state
   if (getTetriminoShape (t) == I) {
     kicks = I_kicks[getTetriminoRotationState (t)];
   } else {
     kicks = not_I_kicks[getTetriminoRotationState (t)];
   }
-  
-  // Rotate the piece
-  moveTetriminoCCW (t);
-  Tcoordinate init_tet_x = getTetriminoX (t);
-  Tcoordinate init_tet_y = getTetriminoY (t);
   
   // Attempt to kick the piece
   int i = 0;
@@ -483,6 +483,11 @@ static void pathfinderPerformRotateCCW (Tbot_board *b, Ttetrimino *t) {
   }
 
   Tcoordinate_diff (*kicks)[2];
+  
+  // Rotate the piece
+  moveTetriminoCCW (t);
+  Tcoordinate init_tet_x = getTetriminoX (t);
+  Tcoordinate init_tet_y = getTetriminoY (t);
 
   // Get the kicks for the avtive piece and its rotation state
   if (getTetriminoShape (t) == I) {
@@ -490,11 +495,6 @@ static void pathfinderPerformRotateCCW (Tbot_board *b, Ttetrimino *t) {
   } else {
     kicks = not_I_kicks[getTetriminoRotationState (t)];
   }
-
-  // Rotate the piece
-  moveTetriminoCCW (t);
-  Tcoordinate init_tet_x = getTetriminoX (t);
-  Tcoordinate init_tet_y = getTetriminoY (t);
 
   // Attempt to kick the piece
   int i = 0;
