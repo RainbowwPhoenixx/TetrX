@@ -64,6 +64,10 @@ void setBoardLinesCleared (Tboard *b, Tline_counter lines) {
   b->lines_cleared = lines;
 }
 
+Tstatistics *getBoardStats (Tboard *b) {
+  return &b->stats;
+}
+
 bool getBoardHasHeldThisTurnStatus (Tboard *b) {
   return b->has_held_this_turn;
 }
@@ -102,6 +106,17 @@ Tboard createBoard () {
   setBoardHasLostStatus (&b, false);
   setBoardShouldEndTurnStatus (&b, false);
   setBoardHasHeldThisTurnStatus (&b, false);
+  
+  b.stats.clear_single = 0;
+  b.stats.clear_double = 0;
+  b.stats.clear_triple = 0;
+  b.stats.clear_tetris = 0;
+  b.stats.clear_tss    = 0;
+  b.stats.clear_tsd    = 0;
+  b.stats.clear_tst    = 0;
+  b.stats.clear_pc     = 0;
+  b.stats.nb_of_pieces = 0;
+  b.stats.total_attack = 0;
 
   return b;
 }

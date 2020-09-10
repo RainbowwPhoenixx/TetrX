@@ -15,5 +15,18 @@ typedef signed char Tcoordinate_diff; // Only 1 byte needed to represent a coord
 void initRandom ();
 unsigned int getRandomInteger (unsigned int max);
 
+// --------------------------------------------------------------------------
+//                         LINE CLEAR TYPES
+// --------------------------------------------------------------------------
+
+typedef enum {NONE, NORMAL, TSPIN, PC} Tattack_kind;
+
+typedef struct {
+  Tbyte nb_of_lines;
+  Tattack_kind attack_kind;
+} Tline_clear;
+
+Tline_clear createLineClear (Tbyte nb_of_lines, Tattack_kind attack);
+
 
 #endif

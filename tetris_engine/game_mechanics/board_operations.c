@@ -73,10 +73,11 @@ void checkLoss (Tboard *b) {
     }
   }
 }
-void clearLines (Tboard *b) {
+Tline_clear clearLines (Tboard *b) {
   Tmatrix *tmp_matrix = getBoardMatrix (b);
   Tcoordinate lines_to_clear[4];
   Tbyte number_of_lines_to_clear = 0;
+  Tline_clear cleared = createLineClear (0, NONE);
 
   // Find full lines
   for (Tcoordinate line = 0; line < C_MATRIX_HEIGHT; line++) {
@@ -94,7 +95,7 @@ void clearLines (Tboard *b) {
   }
 
   // If no lines to clear, stop here
-  if (number_of_lines_to_clear == 0) return;
+  if (number_of_lines_to_clear == 0) return cleared;
 
   // Delete the full lines and pull down the ones above
   for (Tcoordinate line_number = number_of_lines_to_clear-1; line_number >= 0; line_number--) {
@@ -104,10 +105,27 @@ void clearLines (Tboard *b) {
       }
     }
   }
+  
+  // To check for a PC, you only need to check the bottomest line
+  Tcoordinate x = 0;
+  bool pc_check;
+  do {
+    pc_check = isMinoAtPosEmpty (tmp_matrix, x, 0);
+    x++;
+  } while(pc_check && x < C_MATRIX_WIDTH);
 
   // Add the cleared lines to the line counter
   setBoardLinesCleared (b, getBoardLinesCleared (b) + number_of_lines_to_clear);
   IO_out.lineClearAnimationFunc (lines_to_clear, number_of_lines_to_clear);
+  
+  if (pc_check) {
+    cleared.attack_kind = PC;
+  } else {
+    cleared.attack_kind = NORMAL;
+  }
+  cleared.nb_of_lines = number_of_lines_to_clear;
+  
+  return cleared;
 }
 void lockActiveTetrimino (Tboard *b) {
   Ttetrimino *t = getBoardActiveTetrimino (b);

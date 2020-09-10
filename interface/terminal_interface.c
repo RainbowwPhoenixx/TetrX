@@ -43,6 +43,22 @@
 #define LINES_WINDOW_HEIGHT 1
 #define LINES_WINDOW_WIDTH 10
 
+#define STATS_WINDOW_X 55
+#define STATS_WINDOW_Y 2
+#define STATS_WINDOW_HEIGHT 12
+#define STATS_WINDOW_WIDTH 10
+
+#define STATS_Y        0
+#define STATS_SINGLE_X 0
+#define STATS_DOUBLE_X 1
+#define STATS_TRIPLE_X 2
+#define STATS_TETRIS_X 3
+#define STATS_TSS_X    5
+#define STATS_TSD_X    6
+#define STATS_TST_X    7
+#define STATS_PC_X     9
+#define STATS_APP_X    11
+
 // Definition of the duration of a frame (in microseconds)
 #define FRAME_DURATION 16666
 // Definition of the different delays (in # of frames)
@@ -57,6 +73,7 @@ static WINDOW *win_hold;
 static WINDOW *win_next;
 static WINDOW *win_score;
 static WINDOW *win_lines;
+static WINDOW *win_stats;
 
 // Output
 
@@ -89,6 +106,7 @@ static void initDisplay () {
   win_next = newwin (NEXT_WINDOW_HEIGHT, NEXT_WINDOW_WIDTH, NEXT_WINDOW_Y, NEXT_WINDOW_X);
   win_hold = newwin (HOLD_WINDOW_HEIGHT, HOLD_WINDOW_WIDTH, HOLD_WINDOW_Y, HOLD_WINDOW_X);
   win_lines = newwin (LINES_WINDOW_HEIGHT, LINES_WINDOW_WIDTH, LINES_WINDOW_Y, LINES_WINDOW_X);
+  win_stats = newwin (STATS_WINDOW_HEIGHT, STATS_WINDOW_WIDTH, STATS_WINDOW_Y, STATS_WINDOW_X);
 }
 static void resetScreen () {
   // Clears the whole terminal
@@ -101,6 +119,7 @@ static void updateScreen() {
   wnoutrefresh (win_next);
   wnoutrefresh (win_hold);
   wnoutrefresh (win_lines);
+  wnoutrefresh (win_stats);
   doupdate();
   usleep(FRAME_DURATION);
 }
@@ -111,6 +130,7 @@ static void endDisplay () {
   delwin(win_next);
   delwin(win_score);
   delwin(win_lines);
+  delwin(win_stats);
   endwin();
 }
 static void displaySkin () {
@@ -153,6 +173,26 @@ static void translateCoordinates (Tcoordinate x, Tcoordinate y, Tcoordinate x_or
 static void showMinoAtTerminalCoords (WINDOW *win, Tcoordinate x, Tcoordinate y) {
   // Displays a mino at (x,y) in the terminal
   mvwaddstr(win, y, x, mino_skin);
+}
+static void showStats (Tstatistics *stats) {
+  wmove (win_stats, STATS_SINGLE_X, STATS_Y);
+  wprintw (win_stats, "%d", stats->clear_single);
+  wmove (win_stats, STATS_DOUBLE_X, STATS_Y);
+  wprintw (win_stats, "%d", stats->clear_double);
+  wmove (win_stats, STATS_TRIPLE_X, STATS_Y);
+  wprintw (win_stats, "%d", stats->clear_triple);
+  wmove (win_stats, STATS_TETRIS_X, STATS_Y);
+  wprintw (win_stats, "%d", stats->clear_tetris);
+  wmove (win_stats, STATS_TSS_X, STATS_Y);
+  wprintw (win_stats, "%d", stats->clear_tss);
+  wmove (win_stats, STATS_TSD_X, STATS_Y);
+  wprintw (win_stats, "%d", stats->clear_tsd);
+  wmove (win_stats, STATS_TST_X, STATS_Y);
+  wprintw (win_stats, "%d", stats->clear_tst);
+  wmove (win_stats, STATS_PC_X, STATS_Y);
+  wprintw (win_stats, "%d", stats->clear_pc);
+  wmove (win_stats, STATS_APP_X, STATS_Y);
+  wprintw (win_stats, "%f", (float) stats->total_attack/stats->nb_of_pieces);
 }
 
 static void showNextQueue (Tnext_queue *next_queue) {
@@ -263,6 +303,7 @@ static void showBoard (Tboard *board) {
   showHold (getBoardHoldPiece (board));
   showNextQueue (getBoardNextQueue (board));
   showLinesCleared (getBoardLinesCleared (board));
+  showStats (getBoardStats(board));
 }
 
 // Input
@@ -328,7 +369,6 @@ Tinterface_out getTerminalInterfaceOut () {
 
   return IO_out;
 }
-
 Tinterface_in getTerminalInterfaceIn () {
   // Construct the terminal interface input structure
   Tinterface_in IO_in;

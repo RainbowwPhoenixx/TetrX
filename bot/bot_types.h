@@ -115,17 +115,4 @@ TMoveNode* popMinMoveNodeFromList (TMoveNodeList *list);
 bool isNotObstacle (Tbot_board* b, Ttetrimino* t);
 void applyBotMoveToTetrimino (Tmovement mv, Ttetrimino* t, Tbot_board* board);
 
-// --------------------------------------------------------------------------
-//                         LINE CLEAR TYPES
-// --------------------------------------------------------------------------
-
-typedef enum {NONE, NORMAL, TSPIN, PC} Tattack_kind;
-
-typedef struct {
-  Tbyte nb_of_lines;
-  Tattack_kind attack_kind;
-} Tline_clear;
-
-Tline_clear createLineClear (Tbyte nb_of_lines, Tattack_kind attack);
-
 #endif /* end of include guard: __BOT_TYPES_H__ */

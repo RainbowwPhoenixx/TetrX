@@ -8,7 +8,7 @@
 bool isBoardStateValid (Tboard *b);
 void popTetriminoFromQueue (Tboard *b);
 void lockActiveTetrimino (Tboard *b);
-void clearLines (Tboard *b);
+Tline_clear clearLines (Tboard *b);
 void checkLoss (Tboard *b);
 
 // Input handling
