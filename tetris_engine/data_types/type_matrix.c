@@ -25,7 +25,7 @@ Tmatrix createMatrix () {
 // Useful functions
 bool isMinoAtPosEmpty (Tmatrix *matrix, Tcoordinate x, Tcoordinate y) {
   // Returns true if the matrix does not contain a tetrimino at the specified coordinates
-  return (getMatrixShapeAtPos(matrix, x, y) == EMPTY);
+  return ((x >= 0) && (x < C_MATRIX_WIDTH) && (y >= 0) && (getMatrixShapeAtPos(matrix, x, y) == EMPTY));
 }
 
 void copyMatrix (Tmatrix *dest, Tmatrix *src) {

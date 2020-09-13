@@ -99,6 +99,13 @@ static void setTetriminoRotationState (Ttetrimino *t, Trotation_state rot_state)
   t->rotation_state = rot_state;
 }
 
+Ttspin_status getTetriminoTspinStatus (Ttetrimino *t) {
+  return t->tspin_status;
+}
+Ttspin_status setTetriminoTspinStatus (Ttetrimino *t, Ttspin_status new_status) {
+  t->tspin_status = new_status;
+}
+
 // Constructor
 Ttetrimino createTetrimino (Tshape tetrimino_shape) {
   Ttetrimino t;
@@ -118,6 +125,7 @@ Ttetrimino createTetrimino (Tshape tetrimino_shape) {
 
   setTetriminoMinos (&t, R0);
   setTetriminoRotationState (&t, R0);
+  setTetriminoTspinStatus (&t, NONE);
 
   return t;
 }
@@ -165,4 +173,5 @@ void copyTetrimino (Ttetrimino *dest, Ttetrimino *src) {
   Trotation_state rotation = getTetriminoRotationState (src);
   setTetriminoRotationState (dest, rotation);
   setTetriminoMinos (dest, rotation);
+  setTetriminoTspinStatus (dest, getTetriminoTspinStatus (src));
 }

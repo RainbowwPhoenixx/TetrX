@@ -8,12 +8,14 @@
 #define NUMBER_OF_MINOS 4
 
 typedef enum {R0=0, R90=1, R180=2, R270=3} Trotation_state;
+typedef enum {NOSPIN, MINI, FULL} Ttspin_status;
 
 typedef struct {
   Tshape shape;                   // Shape of the tetrimino
-  Tmino *minos;   // Components of the tetrimino
+  Tmino *minos;                   // Components of the tetrimino
   Tcoordinate x, y;               // Position of the tetrimino on the matrix
   Trotation_state rotation_state; // Stores the current rotation state
+  Ttspin_status tspin_status;     // Stores wether the current move is a tspin
 } Ttetrimino;
 
 // Accessor prototypes
@@ -32,6 +34,9 @@ Tcoordinate getTetriminoY (Ttetrimino *t);
 void setTetriminoY (Ttetrimino *t, Tcoordinate new_y);
 
 Trotation_state getTetriminoRotationState (Ttetrimino *t);
+
+Ttspin_status getTetriminoTspinStatus (Ttetrimino *t);
+Ttspin_status setTetriminoTspinStatus (Ttetrimino *t, Ttspin_status new_status);
 
 // Constructor
 Ttetrimino createTetrimino (Tshape tetrimino_shape);
