@@ -22,11 +22,10 @@ Switching to C is also an opportunity to :
 - Read the different options from a text file at runtime
 - Separate game & bot data structs more
 ### Game
-- Implement T-spin detection
 - Implement scoring
 - Create a recording functionality
 - Create a replay functionality
-- Keep track of line clearing stats
+- Add APP to stat tracking
 ### Interface
 - Make keys configurable
 - Create a graphical interface
@@ -39,3 +38,4 @@ Switching to C is also an opportunity to :
 - Pattern detection
 - Better variable & type names plz
 - Fix Tspin detection
+- Make pathfinder return the board and the tspin status instead of refiguring it out in the node creation function
