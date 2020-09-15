@@ -135,6 +135,8 @@ Tline_clear clearLines (Tboard *b) {
   
   if (pc_check) {
     cleared.attack_kind = PC;
+  } else if (getTetriminoTspinStatus (getBoardActiveTetrimino (b)) == FULL) {
+    cleared.attack_kind = TSPIN;
   } else {
     cleared.attack_kind = NORMAL;
   }
