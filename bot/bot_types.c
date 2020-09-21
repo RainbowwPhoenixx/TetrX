@@ -524,3 +524,34 @@ void applyBotMoveToTetrimino (Tmovement mv, Ttetrimino* t, Tbot_board* board) {
     break;
   }
 }
+
+
+// --------------------------------------------------------------------------
+//                        PATTERN MATCHING STUFF
+// --------------------------------------------------------------------------
+
+int patternMatch (Tbot_board *b, Tpattern *pattern, Tcoordinate *heights) {
+  // Returns the number of matching places in the board
+  Tbot_matrix *m = getBotBoardMatrix (b);
+  Trow *rows = m->rows;
+  int pattern_count = 0;
+  
+  // For each column TODO : recheck bounds
+  for (int column = 0; column < C_MATRIX_WIDTH-pattern->w+1; column++) {
+    // For each row
+    for (int row = 0; row < heights[column]+pattern->h; row++) {
+      int i = 0;
+      bool match = true;
+      do {
+        match = ((rows[row+i]<<column & pattern->filled[i]) == pattern->filled[i]) && (((~rows[row+i])<<column & pattern->empty[i]) == pattern->empty[i]);
+        i++;
+      } while(i < pattern->h && match);
+      
+      if (match) {
+        pattern_count++;
+      }
+    }
+  }
+  
+  return pattern_count;
+}

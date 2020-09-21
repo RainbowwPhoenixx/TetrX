@@ -115,4 +115,17 @@ TMoveNode* popMinMoveNodeFromList (TMoveNodeList *list);
 bool isNotObstacle (Tbot_board* b, Ttetrimino* t);
 void applyBotMoveToTetrimino (Tmovement mv, Ttetrimino* t, Tbot_board* board);
 
+// --------------------------------------------------------------------------
+//                        PATTERN MATCHING STUFF
+// --------------------------------------------------------------------------
+
+typedef struct {
+  // Contains the size of the pattern
+  int h, w;
+  // Contains the bitmasks of the rows of the pattern
+  Trow filled[6], empty[6];
+} Tpattern;
+
+int patternMatch (Tbot_board *b, Tpattern *pattern, Tcoordinate *heights);
+
 #endif /* end of include guard: __BOT_TYPES_H__ */

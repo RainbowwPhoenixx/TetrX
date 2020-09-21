@@ -13,6 +13,26 @@
 #define MIN(a, b) (((a)<(b))?(a):(b))
 #define ABS(val) (((val)<0)?(-(val)):(val))
 
+// Patterns (bit fields are upside down)
+Tpattern tslot_left = {
+  .h = 3, .w = 3,
+  .filled = {0b101,
+             0b000,
+             0b001},
+  .empty  = {0b010,
+             0b111,
+             0b110}
+};
+Tpattern tslot_right = {
+  .h = 3, .w = 3,
+  .filled = {0b101,
+             0b000,
+             0b100},
+  .empty  = {0b010,
+             0b111,
+             0b011}
+};
+
 // Flag accessors for communication between threads
 bool getShouldOutputPieceFlag (Tbot *bot) {
   // Returns true if the should_output_piece_flag is set to true.
@@ -198,6 +218,8 @@ static void evaluateNode (Tnode *node) {
   score += -.8*computeBumpiness (heights, well);
   score += -.05*computeBumpinessSquared (heights, well);
   score += -100*computeNumberOfHoles (board, heights);
+  score += 75*patternMatch (board, &tslot_left, heights);
+  score += 75*patternMatch (board, &tslot_right, heights);
   
   // PC bonus
   if (max_height == 0) {
