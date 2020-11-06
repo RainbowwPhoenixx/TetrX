@@ -313,6 +313,24 @@ static bool isRestingOnBlock (Tbot_board *board, Ttetrimino* t) {
 
   return res;
 }
+static bool checkDuplicate (Ttetrimino* t, bool visited[11][45][4]) {
+  // Check if the space that the tetrimino occupies is already accouted for
+  Tshape shape = getTetriminoShape(t);
+  if ((shape != I) && (shape != S) && (shape != Z)) {
+    return false;
+  }
+  
+  Tcoordinate x = getTetriminoX (t);
+  Tcoordinate y = getTetriminoY (t);
+  Trotation_state rot = getTetriminoRotationState(t);
+  
+  switch (rot) {
+    case R0  : return visited[(x+1)  ][y+1][R180];
+    case R90 : return visited[(x+1)+1][y  ][R270];
+    case R180: return visited[(x+1)  ][y-1][R0  ];
+    case R270: return visited[(x+1)-1][y  ][R90 ];
+  }
+}
 static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *next_queue, bool should_insert_hold_move) {
   // Generates all the possible moves form the given board state and adds them to the queue
   // Current implementation : Dijkstra
@@ -320,7 +338,12 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
   // Possible optimizations :
   // - Reduce matrix height because you can't actually pathfind up
 
-  // Move set that the pathfinder can use & durantion estimates for them
+  // Move set that the pathfinder can use & duration estimates for them
+  Tshape tet_shape = getTetriminoShape(getBotBoardActiveTetrimino(board_state));
+  Tbyte move_set_beginning = 0;
+  if (tet_shape == O) {
+    move_set_beginning = 2; // Ignore rotates if piece is an O
+  }
   Tbyte move_set_size = 5;
   Tbot_movement move_set[] = {BOT_MV_CW, BOT_MV_CCW, BOT_MV_LEFT, BOT_MV_RIGHT, BOT_MV_SONICD};
   Tbyte move_distances[] = {0, 0, 0, 0, 1}; // Sonic drop cost is calculated at the end
@@ -336,7 +359,6 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
   TMoveNode* known_nodes[VISITED_WIDTH][C_MATRIX_HEIGHT][NB_OF_ROTATIONS];
   // List of unvisited nodes
   TMoveNodeList unvisited_move_nodes = {.size = 0};
-  // List of final nodes ?
 
   // Set all visited to false and all known to NULL (is it necessary ?)
   for (Tcoordinate x = 0; x < VISITED_WIDTH; x++) {
@@ -349,14 +371,14 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
   }
 
   // Convert start node and set dist to 0
-  Ttetrimino tmp_tet = createTetrimino (getTetriminoShape(getBotBoardActiveTetrimino(board_state)));
+  Ttetrimino tmp_tet = createTetrimino (tet_shape);
   TMoveNode *start_node = createMoveNode (0, &tmp_tet, 0, NULL);
   addMoveNodeToList (start_node, &unvisited_move_nodes);
   known_nodes[getTetriminoX (&tmp_tet)+1][getTetriminoY (&tmp_tet)][ getTetriminoRotationState (&tmp_tet)] = start_node;
 
   while ((current = popMinMoveNodeFromList (&unvisited_move_nodes))) {
     // Consider/generate all unvisited neighbours and set their dist
-    for (Tbyte i = 0; i < move_set_size; i++) {
+    for (Tbyte i = move_set_beginning; i < move_set_size; i++) {
       float new_distance = current->dist + move_distances[i];
       if (current->best_parent && (current->best_parent->move == BOT_MV_SONICD)) {
         new_distance += 2 * (getTetriminoY (&current->best_parent->best_parent->tetrimino) - getTetriminoY (&current->best_parent->tetrimino));
@@ -386,7 +408,7 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
     // Mark the current node as visited
     visited[getTetriminoX (&(current->tetrimino))+1][getTetriminoY (&(current->tetrimino))][getTetriminoRotationState (&(current->tetrimino))] = true;
     // Add as a tree node if position is final
-    if (isRestingOnBlock (board_state, &(current->tetrimino))) {
+    if (isRestingOnBlock (board_state, &(current->tetrimino))  && !checkDuplicate(&(current->tetrimino), visited)) {
       // Get path taken to get there
       Tbyte nb_of_moves = 0, final_nb_of_moves = 0;
       Tbot_movement reverse_moves[BOT_MAX_MOVES];
@@ -486,8 +508,11 @@ static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_qu
   copyBotBoard (&tmp_board, getNodeBotBoard (node));
   botPopTetriminoFromQueue (&tmp_board, next_queue);
   generateMoves (node, &tmp_board, next_queue, false);
-  botApplyInput (&tmp_board, next_queue, BOT_MV_HOLD);
-  generateMoves (node, &tmp_board, next_queue, true);
+  // Only try holding if the hold piece is different
+  if (getTetriminoShape(getBotBoardActiveTetrimino(&tmp_board)) != getBotBoardHoldPiece(&tmp_board)) {
+    botApplyInput (&tmp_board, next_queue, BOT_MV_HOLD);
+    generateMoves (node, &tmp_board, next_queue, true);
+  }
   
   // Backpropagate the score of the best node (at index 0 since nodes are sorted)
   sortNodeChildren (node);

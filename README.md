@@ -32,7 +32,6 @@ Switching to C is also an opportunity to :
 - Implement animations properly
 ### Bot
 - General type overhaul
-- Optimize pathfinder for edge cases (O piece, try hold only if not same piece)
 - Optimize memory copying
 - Implement more metrics for the evaluation function
 - Pattern detection
