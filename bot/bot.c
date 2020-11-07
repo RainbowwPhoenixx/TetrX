@@ -14,7 +14,7 @@
 #define ABS(val) (((val)<0)?(-(val)):(val))
 
 // Patterns (bit fields are upside down)
-Tpattern tslot_left = {
+Tpattern tsdslot_left = {
   .h = 3, .w = 3,
   .filled = {0b101,
              0b000,
@@ -23,7 +23,7 @@ Tpattern tslot_left = {
              0b111,
              0b110}
 };
-Tpattern tslot_right = {
+Tpattern tsdslot_right = {
   .h = 3, .w = 3,
   .filled = {0b101,
              0b000,
@@ -31,6 +31,32 @@ Tpattern tslot_right = {
   .empty  = {0b010,
              0b111,
              0b011}
+};
+Tpattern tstslot_left = {
+  .h = 5, .w = 4,
+  .filled = {0b0101,
+             0b0001,
+             0b0101,
+             0b0000,
+             0b0010},
+  .empty  = {0b0010,
+             0b0110,
+             0b0010,
+             0b1110,
+             0b1100}
+};
+Tpattern tstslot_right = {
+  .h = 5, .w = 4,
+  .filled = {0b1010,
+             0b1000,
+             0b1010,
+             0b0000,
+             0b0100},
+  .empty  = {0b0100,
+             0b0110,
+             0b0100,
+             0b0111,
+             0b0011}
 };
 
 // Flag accessors for communication between threads
