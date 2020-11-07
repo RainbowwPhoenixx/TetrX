@@ -113,7 +113,7 @@ void logBestNode (FILE *logfile, Tnode *node) {
     fprintf(logfile, "%d ", node->moves[i]);
   }
   fprintf(logfile, "\n");
-  fprintf(logfile, "Thinking log_depth : %d\n", log_depth);
+  fprintf(logfile, "Thinking depth : %d\n", log_depth);
   fprintf(logfile, "Explored nodes : %d\n", explored_nodes);
   fprintf(logfile, "\n");
   fflush (logfile);
@@ -196,6 +196,7 @@ static float computeNumberOfHoles (Tbot_board *board, Tcoordinate *column_height
   return (float) nb_of_holes;
 }
 static void evaluateNode (Tnode *node) {
+  float score = 50.0;
   // Look at the state of node, calculate its score and set its score field.
   Tbot_board *board = getNodeBotBoard (node);
   Tcoordinate heights[BOT_MATRIX_WIDTH];
@@ -205,24 +206,25 @@ static void evaluateNode (Tnode *node) {
 
   float landing_height = (float) getTetriminoY (getBotBoardActiveTetrimino(board));
   int max_height = computeMaxHeight (heights);
-  float max_height_score = max_height - 5;
-  float avrg_height_score = computeAvrgHeight (heights) - 6;
+  int avrg_height = computeAvrgHeight (heights);
+  float max_height_score = max_height - 3;
+  float avrg_height_score = avrg_height - 4;
   float lines_score, spin_score = 0;
   Tline_clear lines_cleared = getNodeLinesCleared(node);
 
   // Line clear bonus
   switch (lines_cleared.nb_of_lines) {
     case 0: lines_score = 0;  break;
-    case 1: lines_score = -25;  break;
-    case 2: lines_score = -10;  break;
-    case 3: lines_score =  -5;  break;
-    case 4: lines_score = 50; break;
+    case 1: lines_score = -50;  break;
+    case 2: lines_score = -50;  break;
+    case 3: lines_score = -40;  break;
+    case 4: lines_score = 100; break;
     default: lines_score = 0; break;
   }
 
   // Tspin bonus
   if (lines_cleared.attack_kind == TSPIN) {
-    spin_score = 500*lines_cleared.nb_of_lines;
+    spin_score = 150*lines_cleared.nb_of_lines;
   }
   
   // Well detection
@@ -232,24 +234,33 @@ static void evaluateNode (Tnode *node) {
       well = i;
     }
   }
+  
+  // Favorize boards where both sides of the well are the same height
+  if ((well != 0) && (well != 9) && (heights[well-1] == heights[well+1])) {
+    score += 3;
+  }
+  
+  if ((well <=1) || (well >= 8)) {
+    score -= 10;
+  }
 
-  // The score needs to be on average positive for the best nodes for MCTS
-  // so it is initialized with a non 0 value.
-  float score = 50.0;
   score += lines_score;
   score += spin_score;
-  score += -5*landing_height;
+  score += -3*landing_height;
   score += -1*ABS(max_height_score);
-  score += -5*ABS(avrg_height_score);
-  score += -.8*computeBumpiness (heights, well);
-  score += -.05*computeBumpinessSquared (heights, well);
-  score += -100*computeNumberOfHoles (board, heights);
-  score += 75*patternMatch (board, &tslot_left, heights);
-  score += 75*patternMatch (board, &tslot_right, heights);
+  score += -3*ABS(avrg_height_score);
+  score += -.5*computeBumpiness (heights, well);
+  score += -.1*computeBumpinessSquared (heights, well);
+  score += -80*computeNumberOfHoles (board, heights);
+  score += 75*patternMatch (board, &tsdslot_left, heights);
+  score += 75*patternMatch (board, &tsdslot_right, heights);
+  score += 75*patternMatch (board, &tstslot_right, heights);
+  score += 75*patternMatch (board, &tstslot_right, heights);
   
   // PC bonus
   if (max_height == 0) {
     score += 1000;
+    lines_cleared.attack_kind = PC;
   }
 
   setNodeBoardValue (node, score);
