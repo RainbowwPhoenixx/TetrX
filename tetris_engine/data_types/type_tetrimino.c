@@ -49,24 +49,17 @@ static Tcoordinate_diff T_initial_mino_positions[4][4][2] = { // [rotation_state
 
 static void setTetriminoMinos (Ttetrimino *t, Tbyte rotation_state) {
   // Sets the given tetrimino into the given rotation state
-  Tcoordinate_diff (*initial_mino_pos)[2];
 
-  // Select which tetrimino shape and rotation to use
+  // Select which tetrimino shape to use
   switch (getTetriminoShape (t)) {
-    case L: initial_mino_pos = L_initial_mino_positions[rotation_state]; break;
-    case J: initial_mino_pos = J_initial_mino_positions[rotation_state]; break;
-    case S: initial_mino_pos = S_initial_mino_positions[rotation_state]; break;
-    case Z: initial_mino_pos = Z_initial_mino_positions[rotation_state]; break;
-    case O: initial_mino_pos = O_initial_mino_positions[rotation_state]; break;
-    case I: initial_mino_pos = I_initial_mino_positions[rotation_state]; break;
-    case T: initial_mino_pos = T_initial_mino_positions[rotation_state]; break;
+    case L: setMinos(t, (Tmino*) L_initial_mino_positions[rotation_state]); break;
+    case J: setMinos(t, (Tmino*) J_initial_mino_positions[rotation_state]); break;
+    case S: setMinos(t, (Tmino*) S_initial_mino_positions[rotation_state]); break;
+    case Z: setMinos(t, (Tmino*) Z_initial_mino_positions[rotation_state]); break;
+    case O: setMinos(t, (Tmino*) O_initial_mino_positions[rotation_state]); break;
+    case I: setMinos(t, (Tmino*) I_initial_mino_positions[rotation_state]); break;
+    case T: setMinos(t, (Tmino*) T_initial_mino_positions[rotation_state]); break;
     case EMPTY: break;
-  }
-
-  // Swap out the minos
-  for (Tbyte i = 0; i < NUMBER_OF_MINOS; i++) {
-    Tmino tmp_mino = createMino (initial_mino_pos[i][0], initial_mino_pos[i][1]);
-    setIthMino (t, i, tmp_mino);
   }
 }
 
@@ -81,8 +74,8 @@ void setTetriminoShape (Ttetrimino *t, Tshape new_shape) {
 Tmino *getIthMino (Ttetrimino *t, int i) {
   return &(t->minos[i]);
 }
-void setIthMino (Ttetrimino *t, int i, Tmino new_mino) {
-  t->minos[i] = new_mino;
+void setMinos (Ttetrimino *t, Tmino *new_minos) {
+  t->minos = new_minos;
 }
 
 Tcoordinate getTetriminoX (Ttetrimino *t) {
@@ -106,6 +99,13 @@ static void setTetriminoRotationState (Ttetrimino *t, Trotation_state rot_state)
   t->rotation_state = rot_state;
 }
 
+Ttspin_status getTetriminoTspinStatus (Ttetrimino *t) {
+  return t->tspin_status;
+}
+Ttspin_status setTetriminoTspinStatus (Ttetrimino *t, Ttspin_status new_status) {
+  t->tspin_status = new_status;
+}
+
 // Constructor
 Ttetrimino createTetrimino (Tshape tetrimino_shape) {
   Ttetrimino t;
@@ -123,8 +123,9 @@ Ttetrimino createTetrimino (Tshape tetrimino_shape) {
   setTetriminoX (&t, TETRIMINO_SPAWN_X);
   setTetriminoY (&t, TETRIMINO_SPAWN_Y);
 
-  setTetriminoMinos (&t, 0);
+  setTetriminoMinos (&t, R0);
   setTetriminoRotationState (&t, R0);
+  setTetriminoTspinStatus (&t, NONE);
 
   return t;
 }
@@ -166,11 +167,11 @@ void copyTetrimino (Ttetrimino *dest, Ttetrimino *src) {
   // Copies the src tetrimino into dest
 
   setTetriminoShape (dest, getTetriminoShape (src));
-  setTetriminoRotationState (dest, getTetriminoRotationState (src));
   setTetriminoX (dest, getTetriminoX (src));
   setTetriminoY (dest, getTetriminoY (src));
 
-  for (Tbyte i = 0; i < NUMBER_OF_MINOS; i++) {
-    copyMino (getIthMino (dest, i), getIthMino (src, i));
-  }
+  Trotation_state rotation = getTetriminoRotationState (src);
+  setTetriminoRotationState (dest, rotation);
+  setTetriminoMinos (dest, rotation);
+  setTetriminoTspinStatus (dest, getTetriminoTspinStatus (src));
 }

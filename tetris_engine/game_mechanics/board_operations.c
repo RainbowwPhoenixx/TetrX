@@ -1,12 +1,12 @@
 #include "board_operations.h"
 #include "../../interface/type_interface.h"
 
-#define MINIMUM_QUEUE_LENGTH 8
+#define MINIMUM_QUEUE_LENGTH 11
 #define MAXIMUM_AUTHORIZED_HEIGHT 20
 
 #define DAS_VALUE 10
 #define ARR_VALUE 1
-#define SD_ARR_VALUE 1
+#define SD_ARR_VALUE 0
 
 // Kick for the different pieces [rotation_state][kick_index][x or y]
 static Tcoordinate_diff not_I_kicks[4][5][2] = {
@@ -20,6 +20,21 @@ static Tcoordinate_diff I_kicks[4][5][2] = {
   {{ 0,  0}, {-1,  0}, { 2,  0}, {-1,  2}, { 2, -1}},
   {{ 0,  0}, { 2,  0}, {-1,  0}, { 2,  1}, {-1, -2}},
   {{ 0,  0}, { 1,  0}, {-2,  0}, { 1, -2}, {-2,  1}}
+};
+
+// Stores the front and back corners of the T piece for tspin checks for each rotation
+// [rotation][corner id][x or y]
+static Tcoordinate_diff tspin_front_corners[4][2][2] = {
+  {{ 1,  1},{-1,  1}},
+  {{ 1,  1},{ 1, -1}},
+  {{ 1, -1},{-1, -1}},
+  {{-1,  1},{-1, -1}},
+};
+static Tcoordinate_diff tspin_back_corners[4][2][2]  = {
+  {{ 1, -1},{-1, -1}},
+  {{-1,  1},{-1, -1}},
+  {{ 1,  1},{-1,  1}},
+  {{ 1,  1},{ 1, -1}},
 };
 
 extern Tinterface_out IO_out;
@@ -73,10 +88,11 @@ void checkLoss (Tboard *b) {
     }
   }
 }
-void clearLines (Tboard *b) {
+Tline_clear clearLines (Tboard *b) {
   Tmatrix *tmp_matrix = getBoardMatrix (b);
   Tcoordinate lines_to_clear[4];
   Tbyte number_of_lines_to_clear = 0;
+  Tline_clear cleared = createLineClear (0, NONE);
 
   // Find full lines
   for (Tcoordinate line = 0; line < C_MATRIX_HEIGHT; line++) {
@@ -94,7 +110,7 @@ void clearLines (Tboard *b) {
   }
 
   // If no lines to clear, stop here
-  if (number_of_lines_to_clear == 0) return;
+  if (number_of_lines_to_clear == 0) return cleared;
 
   // Delete the full lines and pull down the ones above
   for (Tcoordinate line_number = number_of_lines_to_clear-1; line_number >= 0; line_number--) {
@@ -104,10 +120,29 @@ void clearLines (Tboard *b) {
       }
     }
   }
+  
+  // To check for a PC, you only need to check the bottomest line
+  Tcoordinate x = 0;
+  bool pc_check;
+  do {
+    pc_check = isMinoAtPosEmpty (tmp_matrix, x, 0);
+    x++;
+  } while(pc_check && x < C_MATRIX_WIDTH);
 
   // Add the cleared lines to the line counter
   setBoardLinesCleared (b, getBoardLinesCleared (b) + number_of_lines_to_clear);
   IO_out.lineClearAnimationFunc (lines_to_clear, number_of_lines_to_clear);
+  
+  if (pc_check) {
+    cleared.attack_kind = PC;
+  } else if (getTetriminoTspinStatus (getBoardActiveTetrimino (b)) == FULL) {
+    cleared.attack_kind = TSPIN;
+  } else {
+    cleared.attack_kind = NORMAL;
+  }
+  cleared.nb_of_lines = number_of_lines_to_clear;
+  
+  return cleared;
 }
 void lockActiveTetrimino (Tboard *b) {
   Ttetrimino *t = getBoardActiveTetrimino (b);
@@ -130,6 +165,33 @@ void popTetriminoFromQueue (Tboard *b) {
   }
 }
 
+// Other
+static void checkTspin (Ttetrimino *t, Tboard *b, int kick_index) {
+  // Checks if the t was spun and changes the tetrimino state accordingly
+  
+  if (kick_index == 4) {
+    setTetriminoTspinStatus (t, FULL);
+  } else {
+    Tmatrix *tmp_matrix = getBoardMatrix (b);
+    Tcoordinate tet_x = getTetriminoX (t);
+    Tcoordinate tet_y = getTetriminoY (t);
+    // Count the front corners
+    Tbyte front_corners = 0;
+    front_corners += !isMinoAtPosEmpty (tmp_matrix, tet_x + tspin_front_corners[getTetriminoRotationState (t)][0][0], tet_y + tspin_front_corners[getTetriminoRotationState (t)][0][1]);
+    front_corners += !isMinoAtPosEmpty (tmp_matrix, tet_x + tspin_front_corners[getTetriminoRotationState (t)][1][0], tet_y + tspin_front_corners[getTetriminoRotationState (t)][1][1]);
+    // Count the back corners
+    Tbyte back_corners = 0;
+    back_corners += !isMinoAtPosEmpty (tmp_matrix, tet_x + tspin_back_corners[getTetriminoRotationState (t)][0][0], tet_y + tspin_back_corners[getTetriminoRotationState (t)][0][1]);
+    back_corners += !isMinoAtPosEmpty (tmp_matrix, tet_x + tspin_back_corners[getTetriminoRotationState (t)][1][0], tet_y + tspin_back_corners[getTetriminoRotationState (t)][1][1]);
+    
+    if (front_corners == 2 && back_corners > 0) {
+      setTetriminoTspinStatus (t, FULL);
+    } else if (back_corners == 2 && front_corners > 0) {
+      setTetriminoTspinStatus (t, MINI);
+    }
+  }
+}
+
 // Input handlers
 static void performMoveLeft (Tboard *b) {
   // Save the current board state
@@ -137,7 +199,9 @@ static void performMoveLeft (Tboard *b) {
   copyBoard (&tmp_board, b);
 
   // Attempt to move left
-  moveTetriminoLeft (getBoardActiveTetrimino (b));
+  Ttetrimino *t = getBoardActiveTetrimino (b);
+  moveTetriminoLeft (t);
+  setTetriminoTspinStatus (t, NOSPIN);
 
   // If the new state is not valid, revert to previous state
   if (!isBoardStateValid (b)) {
@@ -150,7 +214,9 @@ static void performMoveRight (Tboard *b) {
   copyBoard (&tmp_board, b);
 
   // Attempt to move right
-  moveTetriminoRight (getBoardActiveTetrimino (b));
+  Ttetrimino *t = getBoardActiveTetrimino (b);
+  moveTetriminoRight (t);
+  setTetriminoTspinStatus (t, NOSPIN);
 
   // If the new state is not valid, revert to previous state
   if (!isBoardStateValid (b)) {
@@ -163,7 +229,9 @@ static void performSoftDrop (Tboard *b) {
   copyBoard (&tmp_board, b);
 
   // Attempt to move down
-  moveTetriminoDown (getBoardActiveTetrimino (b));
+  Ttetrimino *t = getBoardActiveTetrimino (b);
+  moveTetriminoDown (t);
+  setTetriminoTspinStatus (t, NOSPIN);
 
   // If the new state is not valid, revert to previous state
   if (!isBoardStateValid (b)) {
@@ -216,6 +284,12 @@ static void performRotateCW (Tboard *b) {
     // If the new state is not valid, revert to previous state
     if (!isBoardStateValid (b)) {
       copyBoard (b, &tmp_board);
+      return;
+    }
+    
+    // Check for tspin
+    if (getTetriminoShape (t) == T) {
+      checkTspin (t, b, i);
     }
   }
 }
@@ -252,6 +326,12 @@ static void performRotateCCW (Tboard *b) {
     // If the new state is not valid, revert to previous state
     if (!isBoardStateValid (b)) {
       copyBoard (b, &tmp_board);
+      return;
+    }
+    
+    // Check for tspin
+    if (getTetriminoShape (t) == T) {
+      checkTspin (t, b, i);
     }
   }
 }

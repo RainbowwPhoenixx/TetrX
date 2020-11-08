@@ -5,6 +5,30 @@ Tbot bot;
 extern Tinterface_in IO_in;
 extern Tinterface_out IO_out;
 
+static void addClearToStats (Tline_clear clear, Tstatistics *stats) {
+  switch (clear.attack_kind) {
+    case NONE: break;
+    case NORMAL:
+      switch (clear.nb_of_lines) {
+        case 1: stats->clear_single++; break;
+        case 2: stats->clear_double++; break;
+        case 3: stats->clear_triple++; break;
+        case 4: stats->clear_tetris++; break;
+        default :return;
+      }
+      break;
+    case TSPIN:
+      switch (clear.nb_of_lines) {
+        case 1:stats->clear_tss++; break;
+        case 2:stats->clear_tsd++; break;
+        case 3:stats->clear_tst++; break;
+      }
+      break;
+    case PC: stats->clear_pc++;
+  }
+  stats->nb_of_pieces++;
+}
+
 static void initGame (Tboard b) {
   // Initialise the game
   IO_out.initDisplayFunc();
@@ -28,9 +52,11 @@ static void endTurn (Tboard *b) {
   checkLoss (b);
   if (!getBoardHasLostStatus(b)) {
     lockActiveTetrimino (b);
-    clearLines (b);
+    Tline_clear clear = clearLines (b);
     setBoardHasHeldThisTurnStatus (b, false);
     setBoardShouldEndTurnStatus (b, false);
+    
+    addClearToStats (clear, getBoardStats (b));
   }
 }
 
@@ -46,6 +72,7 @@ void playSingleplayer () {
     do {
       Tmovement mv = IO_in.getInputFunc(&bot);
       applyInput (&b, mv);
+      
       IO_out.showBoardFunc (&b);
       IO_out.updateScreenFunc ();
     } while(!getBoardShouldEndTurnStatus (&b));

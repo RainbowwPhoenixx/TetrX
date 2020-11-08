@@ -1,2 +1,4 @@
 *.o
 bin/*
+bot_debug.log
+weights.txt
