@@ -1,21 +1,19 @@
-# TetrX - Yet another Tetris clone
+# TetrX - A Tetris AI and its crummy client
 
-This project emerges from my previous Tetris project written in Pascal. I decided to move to C for convenience and much better compatibility with all systems.
+This project is an AI that is designed to play Tetris versus, even though the client is singleplayer only. This project presently only compiles and runs on linux, and needs SDL2 to compile (SDL is currently only used for getting inputs from a human player).
 
-Switching to C is also an opportunity to :
-- Learn this programming language
-- Learn from the past and produce a much more usable Tetris clone
-- Get used to proper and thorough programming, by writing code that is as flexible as possible
-- Eventually learn AI and multithreading techniques by producing a Tetris AI with this project
-
-## How to play ?
+## How to use ?
 
 - Clone the project in whatever directory you like
 - `cd` into the directory
 - Run the command `make TetrX` to compile the program
-- To launch the game run `./bin/TetrX <bot|human>`.
+- To launch the game run `./bin/TetrX <bot|human>`
+- When the bot has been run at least once, a logging file and a weights file will appear.
+- You can launch another terminal with the logs produced by the bot by running `make view_log`
+- You can modify the weights used in the evaluation function by opening *weights.txt* and editing the values
 
 ## To do
+Note : These are used by me to track my progress, are in no particular order, and do not garantee that they will eventually be implemented.
 ### General
 - Make the ncurses library be linked statically for compatibility with computers where ncurses is not installed
 - Make SDL be linked statically for the same reason
