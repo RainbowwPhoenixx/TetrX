@@ -371,6 +371,7 @@ static bool checkDuplicate (Ttetrimino* t, bool visited[11][45][4]) {
     case R90 : return visited[(x+1)+1][y  ][R270];
     case R180: return visited[(x+1)  ][y-1][R0  ];
     case R270: return visited[(x+1)-1][y  ][R90 ];
+    default : return false;
   }
 }
 static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tnext_queue *next_queue, bool should_insert_hold_move) {
