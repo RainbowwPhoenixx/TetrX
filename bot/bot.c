@@ -195,7 +195,7 @@ static float computeNumberOfHoles (Tbot_board *board, Tcoordinate *column_height
   }
   return (float) nb_of_holes;
 }
-static void evaluateNode (Tnode *node) {
+static void evaluateNode (Tnode *node, float w[WEIGHT_COUNT]) {
   float score = 50.0;
   // Look at the state of node, calculate its score and set its score field.
   Tbot_board *board = getNodeBotBoard (node);
@@ -204,27 +204,33 @@ static void evaluateNode (Tnode *node) {
 
   // Potential future criteria : time, swag, damage, damage/line, death
 
-  float landing_height = (float) getTetriminoY (getBotBoardActiveTetrimino(board));
+  float piece_landing_height = (float) getTetriminoY (getBotBoardActiveTetrimino(board));
   int max_height = computeMaxHeight (heights);
   int avrg_height = computeAvrgHeight (heights);
-  float max_height_score = max_height - 3;
-  float avrg_height_score = avrg_height - 4;
+  float max_height_score = max_height - w[target_maximum_height];
+  float avrg_height_score = avrg_height - w[target_average_height];
   float lines_score, spin_score = 0;
   Tline_clear lines_cleared = getNodeLinesCleared(node);
 
   // Line clear bonus
-  switch (lines_cleared.nb_of_lines) {
-    case 0: lines_score = 0;  break;
-    case 1: lines_score = -50;  break;
-    case 2: lines_score = -50;  break;
-    case 3: lines_score = -40;  break;
-    case 4: lines_score = 100; break;
-    default: lines_score = 0; break;
+  if (lines_cleared.attack_kind == NORMAL) {
+    switch (lines_cleared.nb_of_lines) {
+      case 1: lines_score = w[clear1];  break;
+      case 2: lines_score = w[clear2];  break;
+      case 3: lines_score = w[clear3];  break;
+      case 4: lines_score = w[clear4]; break;
+      default: lines_score = 0; break;
+    }
   }
 
   // Tspin bonus
   if (lines_cleared.attack_kind == TSPIN) {
-    spin_score = 150*lines_cleared.nb_of_lines;
+    switch (lines_cleared.nb_of_lines) {
+      case 1: lines_score = w[tss];  break;
+      case 2: lines_score = w[tsd];  break;
+      case 3: lines_score = w[tst];  break;
+      default: lines_score = 0; break;
+    }
   }
   
   // Well detection
@@ -237,29 +243,28 @@ static void evaluateNode (Tnode *node) {
   
   // Favorize boards where both sides of the well are the same height
   if ((well != 0) && (well != 9) && (heights[well-1] == heights[well+1])) {
-    score += 3;
+    score += w[well_same_height];
   }
   
-  if ((well <=1) || (well >= 8)) {
-    score -= 10;
-  }
+  // Well position score
+  score += w[well0 + well];
 
   score += lines_score;
   score += spin_score;
-  score += -3*landing_height;
-  score += -1*ABS(max_height_score);
-  score += -3*ABS(avrg_height_score);
-  score += -.5*computeBumpiness (heights, well);
-  score += -.1*computeBumpinessSquared (heights, well);
-  score += -80*computeNumberOfHoles (board, heights);
-  score += 75*patternMatch (board, &tsdslot_left, heights);
-  score += 75*patternMatch (board, &tsdslot_right, heights);
-  score += 75*patternMatch (board, &tstslot_right, heights);
-  score += 75*patternMatch (board, &tstslot_right, heights);
+  score += w[landing_height]*piece_landing_height;
+  score += w[maximum_height]*ABS(max_height_score);
+  score += w[average_height]*ABS(avrg_height_score);
+  score += w[bumpiness]*computeBumpiness (heights, well);
+  score += w[bumpiness_sq]*computeBumpinessSquared (heights, well);
+  score += w[number_of_holes]*computeNumberOfHoles (board, heights);
+  score += w[tsd_slot]*patternMatch (board, &tsdslot_left, heights);
+  score += w[tsd_slot]*patternMatch (board, &tsdslot_right, heights);
+  score += w[tst_slot]*patternMatch (board, &tstslot_right, heights);
+  score += w[tst_slot]*patternMatch (board, &tstslot_right, heights);
   
   // PC bonus
   if (max_height == 0) {
-    score += 1000;
+    score += w[pc];
     lines_cleared.attack_kind = PC;
   }
 
@@ -288,7 +293,7 @@ static void backpropagateScore (Tnode *tree_root, Tnode *best_node) {
     sortNodeChildren (current_node);
   }
 }
-static Tnode *addNode(Tnode *parent, Tbot_movement *moves, Tbyte nb_of_moves, Tnext_queue *next_queue) {
+static Tnode *addNode(Tbot *bot, Tnode *parent, Tbot_movement *moves, Tbyte nb_of_moves, Tnext_queue *next_queue) {
   // Computes the board state of the given seqeunce of movements, computes its score, and adds it as a node
   // Returns a pointer to the created node
 
@@ -327,7 +332,7 @@ static Tnode *addNode(Tnode *parent, Tbot_movement *moves, Tbyte nb_of_moves, Tn
   setNodeLinesCleared (new_node, lines);
 
   // Add new node to the search tree, compute score, and update parent data
-  evaluateNode (new_node);
+  evaluateNode (new_node, bot->weights);
   addChildToNode (parent, new_node);
 
   return new_node;
@@ -368,7 +373,7 @@ static bool checkDuplicate (Ttetrimino* t, bool visited[11][45][4]) {
     case R270: return visited[(x+1)-1][y  ][R90 ];
   }
 }
-static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *next_queue, bool should_insert_hold_move) {
+static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tnext_queue *next_queue, bool should_insert_hold_move) {
   // Generates all the possible moves form the given board state and adds them to the queue
   // Current implementation : Dijkstra
 
@@ -487,7 +492,7 @@ static void generateMoves (Tnode *parent, Tbot_board* board_state, Tnext_queue *
       }
       moves[final_nb_of_moves++] = BOT_MV_HD;
 
-      addNode (parent, moves, final_nb_of_moves, next_queue);
+      addNode (bot, parent, moves, final_nb_of_moves, next_queue);
     }
     // Stop if necessary (queue is empty)
     // Repeat with a new node
@@ -544,11 +549,11 @@ static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_qu
   Tbot_board tmp_board;
   copyBotBoard (&tmp_board, getNodeBotBoard (node));
   botPopTetriminoFromQueue (&tmp_board, next_queue);
-  generateMoves (node, &tmp_board, next_queue, false);
+  generateMoves (bot, node, &tmp_board, next_queue, false);
   // Only try holding if the hold piece is different
   if (getTetriminoShape(getBotBoardActiveTetrimino(&tmp_board)) != getBotBoardHoldPiece(&tmp_board)) {
     botApplyInput (&tmp_board, next_queue, BOT_MV_HOLD);
-    generateMoves (node, &tmp_board, next_queue, true);
+    generateMoves (bot, node, &tmp_board, next_queue, true);
   }
   
   // Backpropagate the score of the best node (at index 0 since nodes are sorted)
@@ -685,15 +690,13 @@ static void startBot (Tbot *bot, Tboard board) {
   bot->should_end_bot_flag = false;
   bot->new_pieces_ready_flag = false;
   bot->max_previews = BOT_MAX_PREVIEWS;
-
-  // Init the mutexes
-  // pthread_mutexattr_t attr;
-  // pthread_mutexattr_init (&attr);
-  // pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE);
-  // pthread_mutex_init (&(bot->should_output_piece_mutex), &attr);
-  // pthread_mutex_init (&(bot->output_piece_ready_mutex), &attr);
-  // pthread_mutex_init (&(bot->should_reset_search_mutex), &attr);
-  // pthread_mutex_init (&(bot->should_end_bot_mutex), &attr);
+  
+  // If file does not exist, create it with default weights
+  if (access(WEIGHTS_FILE, R_OK) == -1) {
+    createDefaultWeightsFile ();
+  }
+  // Read the weights
+  readWeights (bot->weights);
 
   pthread_attr_t attr;
   pthread_attr_init(&attr);

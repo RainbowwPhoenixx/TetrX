@@ -19,7 +19,6 @@ Switching to C is also an opportunity to :
 ### General
 - Make the ncurses library be linked statically for compatibility with computers where ncurses is not installed
 - Make SDL be linked statically for the same reason
-- Read the different options from a text file at runtime
 - Separate game & bot data structs more
 ### Game
 - Implement scoring

@@ -20,12 +20,6 @@ typedef struct {
   volatile bool should_end_bot_flag;
   volatile bool new_pieces_ready_flag;
 
-  // Mutexes to protect the above flags
-  // pthread_mutex_t should_output_piece_mutex;
-  // pthread_mutex_t output_piece_ready_mutex;
-  // pthread_mutex_t should_reset_search_mutex;
-  // pthread_mutex_t should_end_bot_mutex;
-
   Tmovement next_moves[MAX_MOVES];
   Tbyte next_moves_length;
 
@@ -33,8 +27,8 @@ typedef struct {
 
   Tboard master_board;
   Tbyte max_previews;
-
-  // Best path found
+  
+  float weights[WEIGHT_COUNT];
 } Tbot;
 
 // Interact with the bot
