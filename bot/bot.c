@@ -103,7 +103,7 @@ Tbyte log_depth = 0;
 int explored_nodes = 0;
 void logBestNode (FILE *logfile, Tnode *node) {
   fprintf(logfile, "Chosen node had a score of : Normal: %6.2f\tAccumulated: %6.2f\n", getNodeBoardValue(node), getNodeAccumulatedBoardValue (node));
-  fprintf(logfile, "Initial rank : %d/%d\n", getNodeInitialRank (node), getNodeNbOfChildren (getNodeImmediateParent (node)));
+  fprintf(logfile, "Initial rank : %3d/ %3d\n", getNodeInitialRank (node), getNodeNbOfChildren (getNodeImmediateParent (node)));
   Ttetrimino *tet = getBotBoardActiveTetrimino (getNodeBotBoard (node));
   fprintf(logfile, "Piece : %d, %d, %d, %d\n", getTetriminoShape (tet), getTetriminoX (tet), getTetriminoY (tet), getTetriminoRotationState (tet));
   Tline_clear lines = getNodeLinesCleared (node);
@@ -113,8 +113,8 @@ void logBestNode (FILE *logfile, Tnode *node) {
     fprintf(logfile, "%d ", node->moves[i]);
   }
   fprintf(logfile, "\n");
-  fprintf(logfile, "Thinking depth : %d\n", log_depth);
-  fprintf(logfile, "Explored nodes : %d\n", explored_nodes);
+  fprintf(logfile, "Thinking depth :%2d\n", log_depth);
+  fprintf(logfile, "Explored nodes :%8d\n", explored_nodes);
   fprintf(logfile, "\n");
   fflush (logfile);
 }
