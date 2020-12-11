@@ -101,7 +101,7 @@ Tbyte log_depth = 0;
 #ifdef LOG_BOT_THINKING
 // Debug functions
 int explored_nodes = 0;
-void logBestNode (FILE *logfile, Tnode *node) {
+void logBestNode (FILE *logfile, Tnode *node, Tbot *bot) {
   fprintf(logfile, "Chosen node had a score of : Normal: %6.2f\tAccumulated: %6.2f\n", getNodeBoardValue(node), getNodeAccumulatedBoardValue (node));
   fprintf(logfile, "Initial rank : %3d/ %3d\n", getNodeInitialRank (node), getNodeNbOfChildren (getNodeImmediateParent (node)));
   Ttetrimino *tet = getBotBoardActiveTetrimino (getNodeBotBoard (node));
@@ -115,6 +115,7 @@ void logBestNode (FILE *logfile, Tnode *node) {
   fprintf(logfile, "\n");
   fprintf(logfile, "Thinking depth :%2d\n", log_depth);
   fprintf(logfile, "Explored nodes :%8d\n", explored_nodes);
+  fprintf(logfile, "Allocated nodes :%7d\n", bot->pool.total_node_count);
   fprintf(logfile, "\n");
   fflush (logfile);
 }
@@ -328,7 +329,7 @@ static Tnode *addNode(Tbot *bot, Tnode *parent, Tbot_movement *moves, Tbyte nb_o
   botLockActiveTetrimino (&new_board);
 
   Tline_clear lines = createLineClear (botClearLines (&new_board), attack);
-  Tnode *new_node = createNode (new_board, nb_of_moves, moves, parent);
+  Tnode *new_node = createNode (new_board, nb_of_moves, moves, parent, &bot->pool);
   setNodeLinesCleared (new_node, lines);
 
   // Add new node to the search tree, compute score, and update parent data
@@ -605,7 +606,7 @@ static void reduceNextPieceOffset (Tnode *node) {
 // Bot main loop
 static void *bot_TetrX (void *_bot) {
   Tbot *bot = (Tbot*) _bot;
-  Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
+  Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL, &bot->pool);
   Tnext_queue global_next_queue = createNextQueue ();
   copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
   // Init the PRNG for random node selection
@@ -624,7 +625,7 @@ static void *bot_TetrX (void *_bot) {
       Tnode *best_child = getNodeIthChild (search_tree, 0);
       
       #ifdef LOG_BOT_THINKING
-      logBestNode (logfile, best_child);
+      logBestNode (logfile, best_child, bot);
       explored_nodes = 0;
       log_depth = 0;
       #endif
@@ -638,7 +639,7 @@ static void *bot_TetrX (void *_bot) {
       setShouldOutputPieceFlag (bot, false);
       // Free all the search tree except for the best node
       setNodeIthChild (search_tree, 0, NULL);
-      freeNode (search_tree);
+      freeNode (search_tree, &bot->pool);
       // Advance to think on the next board state
       search_tree = best_child;
       advanceNextQueue (&global_next_queue);
@@ -646,9 +647,9 @@ static void *bot_TetrX (void *_bot) {
     }
     if (getShouldResetSearchFlag (bot)) {
       // Free the current search tree
-      freeNode (search_tree);
+      freeNode (search_tree, &bot->pool);
       // Get the new values
-      search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
+      search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL, &bot->pool);
       copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
       // Reset the flag
       setShouldResetSearchFlag (bot, false);
@@ -676,7 +677,7 @@ static void *bot_TetrX (void *_bot) {
   #endif
 
   // Free the memory
-  freeNode (search_tree);
+  freeNode (search_tree, &bot->pool);
 
   return NULL;
 }
@@ -698,6 +699,8 @@ static void startBot (Tbot *bot, Tboard board) {
   }
   // Read the weights
   readWeights (bot->weights);
+  // Allocate the memory pool
+  bot->pool = createNodeMemoryPool();
 
   pthread_attr_t attr;
   pthread_attr_init(&attr);
@@ -736,6 +739,9 @@ static Tmovement getBotMovement (Tbot *bot) {
 static void endBot (Tbot *bot) {
   void *status;
   bot->should_end_bot_flag = true;
+  if (!freeNodeMemoryPool (bot->pool)) {
+    exit(-10);
+  }
   // pthread_join (bot->thread_id, &status); // If thread terminates before calling this, segfault
 }
 static void addBagToBot (Tbot *bot, Tshape *new_bag) {

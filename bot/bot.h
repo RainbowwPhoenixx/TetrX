@@ -29,6 +29,8 @@ typedef struct {
   Tbyte max_previews;
   
   float weights[WEIGHT_COUNT];
+  
+  Tnode_memory_pool pool;
 } Tbot;
 
 // Interact with the bot
