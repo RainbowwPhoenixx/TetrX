@@ -402,7 +402,7 @@ static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tn
   // Array used to know which node corresponds to which spot
   TMoveNode* known_nodes[VISITED_WIDTH][C_MATRIX_HEIGHT][NB_OF_ROTATIONS];
   // List of unvisited nodes
-  TMoveNodeList unvisited_move_nodes = {.size = 0};
+  TMoveNodeList unvisited_move_nodes = {.head_0 = 0, .head_1 = 0, .size_else = 0, .tail_0 = 0, .tail_1 = 0};
 
   // Set all visited to false and all known to NULL (is it necessary ?)
   for (Tcoordinate x = 0; x < VISITED_WIDTH; x++) {
@@ -457,7 +457,7 @@ static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tn
       Tbyte nb_of_moves = 0, final_nb_of_moves = 0;
       Tbot_movement reverse_moves[BOT_MAX_MOVES];
       TMoveNode* current_path_backtrack = current;
-      Ttetrimino spin_check_tet = createTetrimino (getTetriminoShape(getBotBoardActiveTetrimino(board_state)));
+      Ttetrimino spin_check_tet = createTetrimino (tet_shape);
 
       do {
         reverse_moves[nb_of_moves] = current_path_backtrack->move;

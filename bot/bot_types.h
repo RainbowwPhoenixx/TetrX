@@ -101,9 +101,17 @@ typedef struct _TMoveNode {
   struct _TMoveNode* best_parent;
 } TMoveNode;
 
-typedef struct { // Change to heap implementation later for optimization
-  unsigned int size;
-  TMoveNode* items[MOVE_NODE_LIST_MAX_ITEMS];
+// Queue implementation for 0 and 1, list for else
+// Change to heap implementation later for optimization
+// at the moment, only 2 distance values are possible, let's take advantage of this
+// We're still gonna have a third list just in case tho
+typedef struct {
+  unsigned int head_0, tail_0;
+  unsigned int head_1, tail_1;
+  unsigned int size_else;
+  TMoveNode* items_0[MOVE_NODE_LIST_MAX_ITEMS];
+  TMoveNode* items_1[MOVE_NODE_LIST_MAX_ITEMS];
+  TMoveNode* items_else[MOVE_NODE_LIST_MAX_ITEMS];
 } TMoveNodeList;
 
 TMoveNode* createMoveNode (Tbot_movement move, Ttetrimino* tetrimino, float distance, TMoveNode* parent);

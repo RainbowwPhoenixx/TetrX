@@ -375,23 +375,53 @@ void destroyMoveNode (TMoveNode *node) {
 }
 
 void addMoveNodeToList (TMoveNode* mvnode, TMoveNodeList* list) {
-  list->items[list->size] = mvnode;
-  list->size++;
+  switch (mvnode->dist) {
+  case 0:
+    list->items_0[list->tail_0] = mvnode;
+    list->tail_0 = (list->tail_0 + 1) % MOVE_NODE_LIST_MAX_ITEMS;
+    break;
+  
+  case 1:
+    list->items_1[list->tail_1] = mvnode;
+    list->tail_1 = (list->tail_1 + 1) % MOVE_NODE_LIST_MAX_ITEMS;
+    break;
+
+  default:
+    list->items_else[list->size_else] = mvnode;
+    list->size_else++;
+    break;
+  }
 }
 TMoveNode* popMinMoveNodeFromList (TMoveNodeList *list) {
   // Removes and returns the node with smallest distance from start
   // Returns NULL is queue is empty
 
-  if (list->size == 0) {
+  // First look in the zero and 1 distances
+  if (list->head_0 != list->tail_0) {
+    TMoveNode* res = list->items_0[list->head_0];
+    list->head_0 = (list->head_0 + 1) % MOVE_NODE_LIST_MAX_ITEMS;
+    return res;
+  }
+  
+  if (list->head_1 != list->tail_1) {
+    TMoveNode* res = list->items_1[list->head_1];
+    list->head_1 = (list->head_1 + 1) % MOVE_NODE_LIST_MAX_ITEMS;
+    return res;
+  }
+
+  if (list->size_else == 0) {
     return NULL;
   }
 
+  // Then look in the other distances. Reaching this code should
+  // be extremely rare, so we do not care about efficiency
   float min = 1.0/0.0; // Distances start from 0
   TMoveNode* min_node;
   unsigned int min_i;
 
-  for (unsigned int i = 0; i < list->size; i++) {
-    TMoveNode* min_candidate = list->items[i];
+  // We find the node with the least distance
+  for (unsigned int i = 0; i < list->size_else; i++) {
+    TMoveNode* min_candidate = list->items_else[i];
     if (min_candidate->dist < min) {
       min = min_candidate->dist;
       min_node = min_candidate;
@@ -399,10 +429,11 @@ TMoveNode* popMinMoveNodeFromList (TMoveNodeList *list) {
     }
   }
 
-  for (unsigned int i = min_i; i < list->size; i++) {
-    list->items[i] = list->items[i+1];
+  // Delete the min node from the list by shifting the others
+  for (unsigned int i = min_i; i < list->size_else; i++) {
+    list->items_else[i] = list->items_else[i+1];
   }
-  list->size--;
+  list->size_else--;
 
   return min_node;
 }
