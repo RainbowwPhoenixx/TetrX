@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "bot_parameters.h"
 #include "MC_weights.h"
 
@@ -101,7 +102,7 @@ Tbyte log_depth = 0;
 #ifdef LOG_BOT_THINKING
 // Debug functions
 int explored_nodes = 0;
-void logBestNode (FILE *logfile, Tnode *node, Tbot *bot) {
+void logBestNode (FILE *logfile, Tnode *node, Tbot *bot, time_t thinking_time) {
   fprintf(logfile, "Chosen node had a score of : Normal: %6.2f\tAccumulated: %6.2f\n", getNodeBoardValue(node), getNodeAccumulatedBoardValue (node));
   fprintf(logfile, "Initial rank : %3d/ %3d\n", getNodeInitialRank (node), getNodeNbOfChildren (getNodeImmediateParent (node)));
   Ttetrimino *tet = getBotBoardActiveTetrimino (getNodeBotBoard (node));
@@ -114,7 +115,7 @@ void logBestNode (FILE *logfile, Tnode *node, Tbot *bot) {
   }
   fprintf(logfile, "\n");
   fprintf(logfile, "Thinking depth :%2d\n", log_depth);
-  fprintf(logfile, "Explored nodes :%8d\n", explored_nodes);
+  fprintf(logfile, "Explored nodes :%8d in %f ms/node (cpu time)\n", explored_nodes, (float) 1000*thinking_time/(CLOCKS_PER_SEC*explored_nodes));
   fprintf(logfile, "Allocated nodes :%7d\n", bot->pool.total_node_count);
   fprintf(logfile, "\n");
   fflush (logfile);
@@ -616,6 +617,7 @@ static void *bot_TetrX (void *_bot) {
   #ifdef LOG_BOT_THINKING
   // Setting up the log file for debugging
   FILE *logfile = fopen (LOGFILE, "w");
+  time_t time = clock();
   #endif
 
   while (!getShouldEndBotFlag (bot)) {
@@ -625,9 +627,10 @@ static void *bot_TetrX (void *_bot) {
       Tnode *best_child = getNodeIthChild (search_tree, 0);
       
       #ifdef LOG_BOT_THINKING
-      logBestNode (logfile, best_child, bot);
+      logBestNode (logfile, best_child, bot, clock() - time);
       explored_nodes = 0;
       log_depth = 0;
+      time = clock();
       #endif
 
       // Output the moves of the next piece of the best path found
