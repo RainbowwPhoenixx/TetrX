@@ -98,6 +98,7 @@ typedef struct _TMoveNode {
   Tbot_movement move;
   Ttetrimino tetrimino;
   Tbyte dist; // = time taken to get there
+  bool visited;
   struct _TMoveNode* best_parent;
 } TMoveNode;
 
@@ -114,8 +115,7 @@ typedef struct {
   TMoveNode* items_else[MOVE_NODE_LIST_MAX_ITEMS];
 } TMoveNodeList;
 
-TMoveNode* createMoveNode (Tbot_movement move, Ttetrimino* tetrimino, float distance, TMoveNode* parent);
-void destroyMoveNode (TMoveNode *node);
+void setMoveNode (TMoveNode* node, Tbot_movement move, Ttetrimino* tetrimino, Tbyte distance, TMoveNode* parent);
 
 void addMoveNodeToList (TMoveNode* mvnode, TMoveNodeList* list);
 TMoveNode* popMinMoveNodeFromList (TMoveNodeList *list);

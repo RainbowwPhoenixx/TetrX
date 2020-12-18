@@ -360,18 +360,11 @@ void botApplyInput (Tbot_board *b, Tnext_queue *next_queue, Tbot_movement mv) {
 //                        PATHFINDING STUFF
 // --------------------------------------------------------------------------
 
-TMoveNode* createMoveNode (Tbot_movement move, Ttetrimino* tetrimino, float distance, TMoveNode* parent) {
-  TMoveNode* node = (TMoveNode*) malloc (sizeof(TMoveNode));
-
+void setMoveNode (TMoveNode* node, Tbot_movement move, Ttetrimino* tetrimino, Tbyte distance, TMoveNode* parent) {
   node->move = move;
   copyTetrimino (&(node->tetrimino), tetrimino);
   node->dist = distance;
   node->best_parent = parent;
-
-  return node;
-}
-void destroyMoveNode (TMoveNode *node) {
-  free (node);
 }
 
 void addMoveNodeToList (TMoveNode* mvnode, TMoveNodeList* list) {

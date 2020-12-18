@@ -357,7 +357,7 @@ static bool isRestingOnBlock (Tbot_board *board, Ttetrimino* t) {
 
   return res;
 }
-static bool checkDuplicate (Ttetrimino* t, bool visited[11][45][4]) {
+static bool checkDuplicate (Ttetrimino* t, TMoveNode move_nodes[11][45][4]) {
   // Check if the space that the tetrimino occupies is already accouted for
   Tshape shape = getTetriminoShape(t);
   if ((shape != I) && (shape != S) && (shape != Z)) {
@@ -369,10 +369,10 @@ static bool checkDuplicate (Ttetrimino* t, bool visited[11][45][4]) {
   Trotation_state rot = getTetriminoRotationState(t);
   
   switch (rot) {
-    case R0  : return visited[(x+1)  ][y+1][R180];
-    case R90 : return visited[(x+1)+1][y  ][R270];
-    case R180: return visited[(x+1)  ][y-1][R0  ];
-    case R270: return visited[(x+1)-1][y  ][R90 ];
+    case R0  : return move_nodes[(x+1)  ][y+1][R180].visited;
+    case R90 : return move_nodes[(x+1)+1][y  ][R270].visited;
+    case R180: return move_nodes[(x+1)  ][y-1][R0  ].visited;
+    case R270: return move_nodes[(x+1)-1][y  ][R90 ].visited;
     default : return false;
   }
 }
@@ -387,7 +387,7 @@ static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tn
   Tshape tet_shape = getTetriminoShape(getBotBoardActiveTetrimino(board_state));
   Tbyte move_set_beginning = 0;
   if (tet_shape == O) {
-    move_set_beginning = 2; // Ignore rotates if piece is an O
+    move_set_beginning = 2; // Ignore rotations if piece is an O
   }
   Tbyte move_set_size = 5;
   Tbot_movement move_set[] = {BOT_MV_CW, BOT_MV_CCW, BOT_MV_LEFT, BOT_MV_RIGHT, BOT_MV_SONICD};
@@ -398,62 +398,57 @@ static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tn
   // Array used to keep track of which spots have been visited
   // visited [tetrimino_x][tetrimino_y][Rotation state]
   #define NB_OF_ROTATIONS 4
-  #define VISITED_WIDTH BOT_MATRIX_WIDTH+1
-  bool visited [VISITED_WIDTH][BOT_MATRIX_HEIGHT][NB_OF_ROTATIONS];
+  #define MOVE_NODE_WIDTH BOT_MATRIX_WIDTH+1
   // Array used to know which node corresponds to which spot
-  TMoveNode* known_nodes[VISITED_WIDTH][C_MATRIX_HEIGHT][NB_OF_ROTATIONS];
+  TMoveNode move_nodes[MOVE_NODE_WIDTH][C_MATRIX_HEIGHT][NB_OF_ROTATIONS];
   // List of unvisited nodes
   TMoveNodeList unvisited_move_nodes = {.head_0 = 0, .head_1 = 0, .size_else = 0, .tail_0 = 0, .tail_1 = 0};
 
   // Set all visited to false and all known to NULL (is it necessary ?)
-  for (Tcoordinate x = 0; x < VISITED_WIDTH; x++) {
+  for (Tcoordinate x = 0; x < MOVE_NODE_WIDTH; x++) {
     for (Tcoordinate y = 0; y < C_MATRIX_HEIGHT; y++) {
       for (Tbyte r = 0; r < NB_OF_ROTATIONS; r++) {
-        visited[x][y][r] = false;
-        known_nodes[x][y][r] = NULL;
+        move_nodes[x][y][r].visited = false;
+        move_nodes[x][y][r].dist = -1;
       }
     }
   }
 
   // Convert start node and set dist to 0
   Ttetrimino tmp_tet = createTetrimino (tet_shape);
-  TMoveNode *start_node = createMoveNode (0, &tmp_tet, 0, NULL);
+  TMoveNode *start_node = &move_nodes[getTetriminoX (&tmp_tet)+1][getTetriminoY (&tmp_tet)][getTetriminoRotationState (&tmp_tet)];
+  setMoveNode(start_node, 0, &tmp_tet, 0, NULL);
   addMoveNodeToList (start_node, &unvisited_move_nodes);
-  known_nodes[getTetriminoX (&tmp_tet)+1][getTetriminoY (&tmp_tet)][ getTetriminoRotationState (&tmp_tet)] = start_node;
 
-  while ((current = popMinMoveNodeFromList (&unvisited_move_nodes))) {
-    // Consider/generate all unvisited neighbours and set their dist
-    for (Tbyte i = move_set_beginning; i < move_set_size; i++) {
-      float new_distance = current->dist + move_distances[i];
+  while ((current = popMinMoveNodeFromList(&unvisited_move_nodes))) {
+    current->visited = true;
+    // Generate moves from this node, for each possible move
+    for (Tbyte move_id = move_set_beginning; move_id < move_set_size; move_id++) {
+      // For this considered move, we will:
+      // - Compute the distance after the move
+      // - Set the new neighbour values
+
+      // Compute the distance
+      Tbyte new_distance = current->dist + move_distances[move_id];
       if (current->best_parent && (current->best_parent->move == BOT_MV_SONICD)) {
         new_distance += 2 * (getTetriminoY (&current->best_parent->best_parent->tetrimino) - getTetriminoY (&current->best_parent->tetrimino));
       }
-      TMoveNode* potential_new_neighbour = createMoveNode (move_set[i], &(current->tetrimino), new_distance, current);
-      Ttetrimino* new_tetrimino = &(potential_new_neighbour->tetrimino);
-      applyBotMoveToTetrimino (move_set[i], new_tetrimino, board_state);
-      
-      // If node is not visited & is not an obstacle
-      if ( !visited[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)]
-          && isNotObstacle (board_state, new_tetrimino)) {
-        // If node is not known, create it, else compare distances and set the shortest
-        TMoveNode* neighbour = known_nodes[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][getTetriminoRotationState (new_tetrimino)];
-        if (!neighbour) {
-          neighbour = potential_new_neighbour;
-          known_nodes[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)] = neighbour;
-          addMoveNodeToList (neighbour, &unvisited_move_nodes);
-        } else {
-          if ((potential_new_neighbour->dist < neighbour->dist) && (current != neighbour)) {
-            neighbour->dist = potential_new_neighbour->dist;
-            neighbour->best_parent = current;
-          }
-          destroyMoveNode (potential_new_neighbour);
-        }
-      } else {destroyMoveNode (potential_new_neighbour);}
+
+      // Here we could define methods on move nodes to get the neighbours efficiently
+      Ttetrimino new_tet;
+      copyTetrimino(&new_tet, &current->tetrimino);
+      applyBotMoveToTetrimino(move_set[move_id], &new_tet, board_state);
+      TMoveNode* neighbour = &move_nodes[getTetriminoX(&new_tet)+1][getTetriminoY(&new_tet)][getTetriminoRotationState(&new_tet)];
+
+      if (!neighbour->visited && (new_distance < neighbour->dist) && isNotObstacle(board_state, &new_tet)) {
+        setMoveNode(neighbour, move_set[move_id], &new_tet, new_distance, current);
+        addMoveNodeToList(neighbour, &unvisited_move_nodes);
+      }
     }
-    // Mark the current node as visited
-    visited[getTetriminoX (&(current->tetrimino))+1][getTetriminoY (&(current->tetrimino))][getTetriminoRotationState (&(current->tetrimino))] = true;
-    // Add as a tree node if position is final
-    if (isRestingOnBlock (board_state, &(current->tetrimino))  && !checkDuplicate(&(current->tetrimino), visited)) {
+
+    // Add as a game tree node if the position is valid
+    if (isRestingOnBlock (board_state, &(current->tetrimino))
+        && !checkDuplicate(&(current->tetrimino), move_nodes)) {
       // Get path taken to get there
       Tbyte nb_of_moves = 0, final_nb_of_moves = 0;
       Tbot_movement reverse_moves[BOT_MAX_MOVES];
@@ -500,18 +495,8 @@ static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tn
     // Stop if necessary (queue is empty)
     // Repeat with a new node
   }
-
-  // Free all the move nodes
-  for (Tcoordinate x = 0; x < VISITED_WIDTH; x++) {
-    for (Tcoordinate y = 0; y < C_MATRIX_HEIGHT; y++) {
-      for (Tbyte r = 0; r < NB_OF_ROTATIONS; r++) {
-        if (known_nodes[x][y][r]) {
-          destroyMoveNode (known_nodes[x][y][r]);
-        }
-      }
-    }
-  }
   
+
 }
 static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_queue, struct drand48_data *RNG_data) {
   // Generate the possible moves from the given node, and assigns them a score
