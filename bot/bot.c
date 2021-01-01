@@ -304,7 +304,15 @@ static Tnode *addNode(Tbot *bot, Tnode *parent, Tbot_movement *moves, Tbyte nb_o
   copyBotBoard (&new_board, getNodeBotBoard (parent));
   botPopTetriminoFromQueue (&new_board, next_queue);
   for (Tbyte j = 0; j < nb_of_moves-1; j++) {
-    botApplyInput (&new_board, next_queue, moves[j]);
+    if (moves[j] == BOT_MV_SONICD) {
+      // If sonic drop is last move, just ignore it
+      if (j < nb_of_moves-1) {
+        // Replace sonic drops with a bunch of soft drops
+        botApplyInput (&new_board, next_queue, BOT_MV_HD);
+      }
+    } else {
+      botApplyInput (&new_board, next_queue, moves[j]);
+    }
   }
   Tattack_kind attack = NORMAL;
   // Tspin detection
@@ -453,7 +461,6 @@ static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tn
       Tbyte nb_of_moves = 0, final_nb_of_moves = 0;
       Tbot_movement reverse_moves[BOT_MAX_MOVES];
       TMoveNode* current_path_backtrack = current;
-      Ttetrimino spin_check_tet = createTetrimino (tet_shape);
 
       do {
         reverse_moves[nb_of_moves] = current_path_backtrack->move;
@@ -467,26 +474,9 @@ static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tn
       }
 
       // Take the backward moves and put them in order.
-      // Also handle special cases for sonic drop.
-      // Apply the moves to a tetrimino as we go along to know how much to soft drop
       Tbot_movement moves[BOT_MAX_MOVES];
       for (Tbyte j = 0; j < nb_of_moves; j++) {
-        Tmovement move_to_add = reverse_moves[nb_of_moves -j-1];
-        if (move_to_add == BOT_MV_SONICD) {
-          // If sonic drop is last move, just ignore it
-          if (j < nb_of_moves-1) {
-            // Replace sonic drops with a bunch of soft drops
-            do  {
-              moves[final_nb_of_moves++] = BOT_MV_SD;
-              moveTetriminoDown (&spin_check_tet);
-            } while(isNotObstacle (board_state, &spin_check_tet));
-            moveTetriminoUp(&spin_check_tet);
-            final_nb_of_moves--;
-          }
-        } else {
-          moves[final_nb_of_moves++] = move_to_add;
-          applyBotMoveToTetrimino (move_to_add, &spin_check_tet, board_state);
-        }
+        moves[final_nb_of_moves++] = reverse_moves[nb_of_moves -j-1];
       }
       moves[final_nb_of_moves++] = BOT_MV_HD;
 
@@ -552,32 +542,19 @@ static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_qu
 }
 
 // Various processing functions
-static void translate_moves (Tbot_movement *src_moves, Tbyte src_nb_of_moves,Tmovement *dest_moves, Tbyte *dest_nb_of_moves) {
+static Tmovement translate_move(Tbot_movement move) {
   // Translate moves from the bot's thinking to the game's thinking
-
-  // Space out side moves (hypertap, not DAS)
-  *dest_nb_of_moves = 0;
-  for (Tbyte i = 0; i < src_nb_of_moves; i++) {
-    Tmovement new_move;
-    switch (src_moves[i]) {
-      case BOT_MV_LEFT   : new_move = MV_LEFT   ; break;
-      case BOT_MV_RIGHT  : new_move = MV_RIGHT  ; break;
-      case BOT_MV_CW     : new_move = MV_CW     ; break;
-      case BOT_MV_CCW    : new_move = MV_CCW    ; break;
-      case BOT_MV_SD     : new_move = MV_SD     ; break;
-      case BOT_MV_SONICD : new_move = 0         ; break;
-      case BOT_MV_HD     : new_move = MV_HD     ; break;
-      case BOT_MV_HOLD   : new_move = MV_HOLD   ; break;
-      default            : new_move = 0;
-    }
-
-    dest_moves[*dest_nb_of_moves] = new_move;
-    (*dest_nb_of_moves)++;
-    if (isBotMovementInWord (src_moves+i, BOT_MV_LEFT) || isBotMovementInWord (src_moves+i, BOT_MV_RIGHT) || isBotMovementInWord (src_moves+i, BOT_MV_CW) || isBotMovementInWord (src_moves+i, BOT_MV_CCW)) {
-      dest_moves [*dest_nb_of_moves] = createMovementWord ();
-      (*dest_nb_of_moves)++;
-    }
+  switch (move) {
+    case BOT_MV_LEFT   : return MV_LEFT   ; break;
+    case BOT_MV_RIGHT  : return MV_RIGHT  ; break;
+    case BOT_MV_CW     : return MV_CW     ; break;
+    case BOT_MV_CCW    : return MV_CCW    ; break;
+    case BOT_MV_SD     : return MV_SD     ; break;
+    case BOT_MV_SONICD : return MV_SD     ; break;
+    case BOT_MV_HD     : return MV_HD     ; break;
+    case BOT_MV_HOLD   : return MV_HOLD   ; break;
   }
+  return 0;
 }
 static void reduceNextPieceOffset (Tnode *node) {
   // Recursive function to reduce the next piece offset by one when the thinking for the next piece starts
@@ -620,7 +597,10 @@ static void *bot_TetrX (void *_bot) {
 
       // Output the moves of the next piece of the best path found
       bot->next_moves_length = best_child->nb_of_moves;
-      translate_moves ((Tbot_movement*) &(best_child->moves), best_child->nb_of_moves, bot->next_moves, &bot->next_moves_length);
+      for (int move = 0; move < best_child->nb_of_moves; move++) {
+        bot->next_moves[move] = best_child->moves[move];
+      }
+      
       // Signal that the next piece is ready.
       setOutputPieceReadyFlag (bot, true);
       // Reset the flag
@@ -697,8 +677,9 @@ static void startBot (Tbot *bot, Tboard board) {
   // Create the bot thread
   pthread_create (&(bot->thread_id), &attr, bot_TetrX, (void*) bot);
 }
-static Tmovement getBotMovement (Tbot *bot) {
+static Tmovement getBotMovement (Tbot *bot, Tboard *board) {
   static Tmove_queue next_moves; // Initialized to 0 because it is static
+  static Tbot_movement last_move = 0;
 
   if (getQueueSize (&next_moves) == 0) {
     // Ask the bot to prepare the input
@@ -716,13 +697,23 @@ static Tmovement getBotMovement (Tbot *bot) {
   }
 
   // next_moves acts as a stack
-  Tmovement res;
-  if (getQueueSize (&next_moves) == 0) {
-    res = createMovementWord ();
-  } else {
-    res = popMoveFromQueue (&next_moves);
+  Tbot_movement res = 0;
+  if (getQueueSize (&next_moves) != 0) {
+    switch (last_move) {
+      case 0: res = popMoveFromQueue(&next_moves);  break;
+      case BOT_MV_RIGHT: case BOT_MV_LEFT: res = 0; break;
+      case BOT_MV_SONICD:
+        // We are currently soft dropping
+        // If the tetrimino hit the floor, stop dropping
+        // If it is not, continue
+        res = isTetriminoOnFloor(board) ? 0 : BOT_MV_SONICD;
+        break;
+      default: break;
+    }
   }
-  return res;
+
+  last_move = res;
+  return translate_move(res);
 }
 static void endBot (Tbot *bot) {
   void *status;

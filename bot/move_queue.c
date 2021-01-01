@@ -11,7 +11,7 @@ Tmove_queue createMoveQueue () {
 Tbyte getQueueSize (Tmove_queue *queue) {
   return queue->size;
 }
-Tmovement popMoveFromQueue (Tmove_queue *queue) {
+Tbot_movement popMoveFromQueue (Tmove_queue *queue) {
   // Returns an empty move if the queue is empty
   if (queue->size == 0) {
     return 0;
@@ -22,7 +22,7 @@ Tmovement popMoveFromQueue (Tmove_queue *queue) {
     return res;
   }
 }
-void addMovementToQueue (Tmove_queue *queue, Tmovement move) {
+void addMovementToQueue (Tmove_queue *queue, Tbot_movement move) {
   queue->size++;
   queue->tail = (queue->tail + 1) % MAX_MOVES;
   queue->moves[queue->tail] = move;

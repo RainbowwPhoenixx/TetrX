@@ -70,7 +70,7 @@ void playSingleplayer () {
   while (!getBoardHasLostStatus (&b)) {
     beginTurn(&b);
     do {
-      Tmovement mv = IO_in.getInputFunc(&bot);
+      Tmovement mv = IO_in.getInputFunc(&bot, &b);
       applyInput (&b, mv);
       
       IO_out.showBoardFunc (&b);
