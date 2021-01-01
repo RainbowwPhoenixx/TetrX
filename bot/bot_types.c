@@ -195,28 +195,22 @@ bool isBotBoardStateValid (Tbot_board *b) {
 Tbyte botClearLines (Tbot_board *b) {
   // Clears lines and returns the number of lines cleared.
   Tbot_matrix *tmp_matrix = getBotBoardMatrix (b);
-  Tcoordinate lines_to_clear[4];
-  Tbyte number_of_lines_to_clear = 0;
+  Tbyte cleared_lines = 0;
 
-  // Find full lines
-  for (Tcoordinate line = 0; line < C_MATRIX_HEIGHT; line++) {
+  // For each line, if it is full, pull down the ones above
+  // We assume that it is not possible to clear lines above the 25th
+  for (Tcoordinate line = 0; line < 25; line++) {
     if (isBotMatrixRowFull (tmp_matrix, line)) {
-      lines_to_clear[number_of_lines_to_clear] = line;
-      number_of_lines_to_clear++;
+      for (Tcoordinate i = line; i < C_MATRIX_HEIGHT-1; i++) {
+        setBotMatrixRow (tmp_matrix, i, getBotMatrixRow (tmp_matrix, i+1));
+      }
+      // Since the line-th matrix row has changed, we want to check the same one again
+      line--;
+      cleared_lines++;
     }
   }
 
-  // If no lines to clear, stop here
-  if (number_of_lines_to_clear == 0) return 0;
-
-  // Delete the full lines and pull down the ones above
-  for (Tcoordinate line_number = number_of_lines_to_clear-1; line_number >= 0; line_number--) {
-    for (Tcoordinate line = lines_to_clear[line_number]; line < C_MATRIX_HEIGHT-1; line++) {
-      setBotMatrixRow (tmp_matrix, line, getBotMatrixRow (tmp_matrix, line+1));
-    }
-  }
-
-  return number_of_lines_to_clear;
+  return cleared_lines;
 }
 void botLockActiveTetrimino (Tbot_board *b) {
   Ttetrimino *t = getBotBoardActiveTetrimino (b);
