@@ -6,6 +6,7 @@
 
 // Board functions
 bool isBoardStateValid (Tboard *b);
+bool isTetriminoOnFloor(Tboard *b);
 void popTetriminoFromQueue (Tboard *b);
 void lockActiveTetrimino (Tboard *b);
 Tline_clear clearLines (Tboard *b);

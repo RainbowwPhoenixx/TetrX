@@ -7,7 +7,9 @@
 #include <stdlib.h>
 #include "bot_parameters.h"
 
-// Definition of the search tree used by the bot
+// --------------------------------------------------------------------------
+//                                    NODE
+// --------------------------------------------------------------------------
 
 typedef struct _Tnode {
   // A node contains the state of the board, with the active piece
@@ -71,8 +73,28 @@ void setNodeImmediateParent (Tnode *node, Tnode *parent);
 
 void sortNodeChildren (Tnode* node);
 
+// I define this here so that the next functions for the node are aware of this struct
+#define MAX_NODES_ALLOCATED 500000
+typedef struct _Tnode_memory_pool {
+  uint32_t free_node_count;
+  uint32_t total_node_count;
+  Tnode* free_nodes[MAX_NODES_ALLOCATED];
+} Tnode_memory_pool;
+
 // Constructor & destructor
-Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tbot_movement *moves, Tnode *parent);
-void freeNode (Tnode *tree);
+Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tbot_movement *moves, Tnode *parent, Tnode_memory_pool *pool);
+void freeNode (Tnode *tree, Tnode_memory_pool *pool);
+
+// --------------------------------------------------------------------------
+//                            NODE MEMORY POOL
+// --------------------------------------------------------------------------
+
+Tnode_memory_pool createNodeMemoryPool();
+bool freeNodeMemoryPool(Tnode_memory_pool pool);
+
+Tnode* getNodeFromPool (Tnode_memory_pool* pool);
+void giveNodeToPool (Tnode_memory_pool* pool, Tnode* node);
+
+
 
 #endif /* end of include guard: __TREE_H__ */

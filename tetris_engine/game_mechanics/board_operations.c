@@ -73,6 +73,25 @@ bool isBoardStateValid (Tboard *b) {
 
   return res;
 }
+bool isTetriminoOnFloor(Tboard *b) {
+  // Returns true if the tetrimino is resting on a block
+
+  bool res = false;
+  Tbyte i = 0;
+
+  Ttetrimino *t = getBoardActiveTetrimino(b);
+
+  while (i < 4 && !res) {
+    Tmino *tmp_mino = getIthMino (t, i);
+    Tcoordinate tmp_x = getTetriminoX (t) + getMinoXDiff (tmp_mino);
+    Tcoordinate tmp_y = getTetriminoY (t) + getMinoYDiff (tmp_mino);
+    // Mino touches the ground, or there is a mino below it on the matrix
+    res = (tmp_y == 0) || !isMinoAtPosEmpty(getBoardMatrix(b), tmp_x, tmp_y - 1);
+    i++;
+  }
+
+  return res;
+}
 
 // Game mechanics implementation
 

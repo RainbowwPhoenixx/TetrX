@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "bot_parameters.h"
 #include "MC_weights.h"
 
@@ -101,7 +102,7 @@ Tbyte log_depth = 0;
 #ifdef LOG_BOT_THINKING
 // Debug functions
 int explored_nodes = 0;
-void logBestNode (FILE *logfile, Tnode *node) {
+void logBestNode (FILE *logfile, Tnode *node, Tbot *bot, time_t thinking_time) {
   fprintf(logfile, "Chosen node had a score of : Normal: %6.2f\tAccumulated: %6.2f\n", getNodeBoardValue(node), getNodeAccumulatedBoardValue (node));
   fprintf(logfile, "Initial rank : %3d/ %3d\n", getNodeInitialRank (node), getNodeNbOfChildren (getNodeImmediateParent (node)));
   Ttetrimino *tet = getBotBoardActiveTetrimino (getNodeBotBoard (node));
@@ -114,7 +115,8 @@ void logBestNode (FILE *logfile, Tnode *node) {
   }
   fprintf(logfile, "\n");
   fprintf(logfile, "Thinking depth :%2d\n", log_depth);
-  fprintf(logfile, "Explored nodes :%8d\n", explored_nodes);
+  fprintf(logfile, "Explored nodes :%8d in %f ms/node (cpu time)\n", explored_nodes, (float) 1000*thinking_time/(CLOCKS_PER_SEC*explored_nodes));
+  fprintf(logfile, "Allocated nodes :%7d\n", bot->pool.total_node_count);
   fprintf(logfile, "\n");
   fflush (logfile);
 }
@@ -302,7 +304,15 @@ static Tnode *addNode(Tbot *bot, Tnode *parent, Tbot_movement *moves, Tbyte nb_o
   copyBotBoard (&new_board, getNodeBotBoard (parent));
   botPopTetriminoFromQueue (&new_board, next_queue);
   for (Tbyte j = 0; j < nb_of_moves-1; j++) {
-    botApplyInput (&new_board, next_queue, moves[j]);
+    if (moves[j] == BOT_MV_SONICD) {
+      // If sonic drop is last move, just ignore it
+      if (j < nb_of_moves-1) {
+        // Replace sonic drops with a bunch of soft drops
+        botApplyInput (&new_board, next_queue, BOT_MV_HD);
+      }
+    } else {
+      botApplyInput (&new_board, next_queue, moves[j]);
+    }
   }
   Tattack_kind attack = NORMAL;
   // Tspin detection
@@ -328,7 +338,7 @@ static Tnode *addNode(Tbot *bot, Tnode *parent, Tbot_movement *moves, Tbyte nb_o
   botLockActiveTetrimino (&new_board);
 
   Tline_clear lines = createLineClear (botClearLines (&new_board), attack);
-  Tnode *new_node = createNode (new_board, nb_of_moves, moves, parent);
+  Tnode *new_node = createNode (new_board, nb_of_moves, moves, parent, &bot->pool);
   setNodeLinesCleared (new_node, lines);
 
   // Add new node to the search tree, compute score, and update parent data
@@ -355,7 +365,7 @@ static bool isRestingOnBlock (Tbot_board *board, Ttetrimino* t) {
 
   return res;
 }
-static bool checkDuplicate (Ttetrimino* t, bool visited[11][45][4]) {
+static bool checkDuplicate (Ttetrimino* t, TMoveNode move_nodes[11][45][4]) {
   // Check if the space that the tetrimino occupies is already accouted for
   Tshape shape = getTetriminoShape(t);
   if ((shape != I) && (shape != S) && (shape != Z)) {
@@ -367,10 +377,10 @@ static bool checkDuplicate (Ttetrimino* t, bool visited[11][45][4]) {
   Trotation_state rot = getTetriminoRotationState(t);
   
   switch (rot) {
-    case R0  : return visited[(x+1)  ][y+1][R180];
-    case R90 : return visited[(x+1)+1][y  ][R270];
-    case R180: return visited[(x+1)  ][y-1][R0  ];
-    case R270: return visited[(x+1)-1][y  ][R90 ];
+    case R0  : return move_nodes[(x+1)  ][y+1][R180].visited;
+    case R90 : return move_nodes[(x+1)+1][y  ][R270].visited;
+    case R180: return move_nodes[(x+1)  ][y-1][R0  ].visited;
+    case R270: return move_nodes[(x+1)-1][y  ][R90 ].visited;
     default : return false;
   }
 }
@@ -385,7 +395,7 @@ static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tn
   Tshape tet_shape = getTetriminoShape(getBotBoardActiveTetrimino(board_state));
   Tbyte move_set_beginning = 0;
   if (tet_shape == O) {
-    move_set_beginning = 2; // Ignore rotates if piece is an O
+    move_set_beginning = 2; // Ignore rotations if piece is an O
   }
   Tbyte move_set_size = 5;
   Tbot_movement move_set[] = {BOT_MV_CW, BOT_MV_CCW, BOT_MV_LEFT, BOT_MV_RIGHT, BOT_MV_SONICD};
@@ -396,67 +406,61 @@ static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tn
   // Array used to keep track of which spots have been visited
   // visited [tetrimino_x][tetrimino_y][Rotation state]
   #define NB_OF_ROTATIONS 4
-  #define VISITED_WIDTH BOT_MATRIX_WIDTH+1
-  bool visited [VISITED_WIDTH][BOT_MATRIX_HEIGHT][NB_OF_ROTATIONS];
+  #define MOVE_NODE_WIDTH BOT_MATRIX_WIDTH+1
   // Array used to know which node corresponds to which spot
-  TMoveNode* known_nodes[VISITED_WIDTH][C_MATRIX_HEIGHT][NB_OF_ROTATIONS];
+  TMoveNode move_nodes[MOVE_NODE_WIDTH][C_MATRIX_HEIGHT][NB_OF_ROTATIONS];
   // List of unvisited nodes
-  TMoveNodeList unvisited_move_nodes = {.size = 0};
+  TMoveNodeList unvisited_move_nodes = {.head_0 = 0, .head_1 = 0, .size_else = 0, .tail_0 = 0, .tail_1 = 0};
 
   // Set all visited to false and all known to NULL (is it necessary ?)
-  for (Tcoordinate x = 0; x < VISITED_WIDTH; x++) {
+  for (Tcoordinate x = 0; x < MOVE_NODE_WIDTH; x++) {
     for (Tcoordinate y = 0; y < C_MATRIX_HEIGHT; y++) {
       for (Tbyte r = 0; r < NB_OF_ROTATIONS; r++) {
-        visited[x][y][r] = false;
-        known_nodes[x][y][r] = NULL;
+        move_nodes[x][y][r].visited = false;
+        move_nodes[x][y][r].dist = -1;
       }
     }
   }
 
   // Convert start node and set dist to 0
   Ttetrimino tmp_tet = createTetrimino (tet_shape);
-  TMoveNode *start_node = createMoveNode (0, &tmp_tet, 0, NULL);
+  TMoveNode *start_node = &move_nodes[getTetriminoX (&tmp_tet)+1][getTetriminoY (&tmp_tet)][getTetriminoRotationState (&tmp_tet)];
+  setMoveNode(start_node, 0, &tmp_tet, 0, NULL);
   addMoveNodeToList (start_node, &unvisited_move_nodes);
-  known_nodes[getTetriminoX (&tmp_tet)+1][getTetriminoY (&tmp_tet)][ getTetriminoRotationState (&tmp_tet)] = start_node;
 
-  while ((current = popMinMoveNodeFromList (&unvisited_move_nodes))) {
-    // Consider/generate all unvisited neighbours and set their dist
-    for (Tbyte i = move_set_beginning; i < move_set_size; i++) {
-      float new_distance = current->dist + move_distances[i];
+  while ((current = popMinMoveNodeFromList(&unvisited_move_nodes))) {
+    current->visited = true;
+    // Generate moves from this node, for each possible move
+    for (Tbyte move_id = move_set_beginning; move_id < move_set_size; move_id++) {
+      // For this considered move, we will:
+      // - Compute the distance after the move
+      // - Set the new neighbour values
+
+      // Compute the distance
+      Tbyte new_distance = current->dist + move_distances[move_id];
       if (current->best_parent && (current->best_parent->move == BOT_MV_SONICD)) {
         new_distance += 2 * (getTetriminoY (&current->best_parent->best_parent->tetrimino) - getTetriminoY (&current->best_parent->tetrimino));
       }
-      TMoveNode* potential_new_neighbour = createMoveNode (move_set[i], &(current->tetrimino), new_distance, current);
-      Ttetrimino* new_tetrimino = &(potential_new_neighbour->tetrimino);
-      applyBotMoveToTetrimino (move_set[i], new_tetrimino, board_state);
-      
-      // If node is not visited & is not an obstacle
-      if ( !visited[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)]
-          && isNotObstacle (board_state, new_tetrimino)) {
-        // If node is not known, create it, else compare distances and set the shortest
-        TMoveNode* neighbour = known_nodes[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][getTetriminoRotationState (new_tetrimino)];
-        if (!neighbour) {
-          neighbour = potential_new_neighbour;
-          known_nodes[getTetriminoX (new_tetrimino)+1][getTetriminoY (new_tetrimino)][ getTetriminoRotationState (new_tetrimino)] = neighbour;
-          addMoveNodeToList (neighbour, &unvisited_move_nodes);
-        } else {
-          if ((potential_new_neighbour->dist < neighbour->dist) && (current != neighbour)) {
-            neighbour->dist = potential_new_neighbour->dist;
-            neighbour->best_parent = current;
-          }
-          destroyMoveNode (potential_new_neighbour);
-        }
-      } else {destroyMoveNode (potential_new_neighbour);}
+
+      // Here we could define methods on move nodes to get the neighbours efficiently
+      Ttetrimino new_tet;
+      copyTetrimino(&new_tet, &current->tetrimino);
+      applyBotMoveToTetrimino(move_set[move_id], &new_tet, board_state);
+      TMoveNode* neighbour = &move_nodes[getTetriminoX(&new_tet)+1][getTetriminoY(&new_tet)][getTetriminoRotationState(&new_tet)];
+
+      if (!neighbour->visited && (new_distance < neighbour->dist) && isNotObstacle(board_state, &new_tet)) {
+        setMoveNode(neighbour, move_set[move_id], &new_tet, new_distance, current);
+        addMoveNodeToList(neighbour, &unvisited_move_nodes);
+      }
     }
-    // Mark the current node as visited
-    visited[getTetriminoX (&(current->tetrimino))+1][getTetriminoY (&(current->tetrimino))][getTetriminoRotationState (&(current->tetrimino))] = true;
-    // Add as a tree node if position is final
-    if (isRestingOnBlock (board_state, &(current->tetrimino))  && !checkDuplicate(&(current->tetrimino), visited)) {
+
+    // Add as a game tree node if the position is valid
+    if (isRestingOnBlock (board_state, &(current->tetrimino))
+        && !checkDuplicate(&(current->tetrimino), move_nodes)) {
       // Get path taken to get there
       Tbyte nb_of_moves = 0, final_nb_of_moves = 0;
       Tbot_movement reverse_moves[BOT_MAX_MOVES];
       TMoveNode* current_path_backtrack = current;
-      Ttetrimino spin_check_tet = createTetrimino (getTetriminoShape(getBotBoardActiveTetrimino(board_state)));
 
       do {
         reverse_moves[nb_of_moves] = current_path_backtrack->move;
@@ -470,26 +474,9 @@ static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tn
       }
 
       // Take the backward moves and put them in order.
-      // Also handle special cases for sonic drop.
-      // Apply the moves to a tetrimino as we go along to know how much to soft drop
       Tbot_movement moves[BOT_MAX_MOVES];
       for (Tbyte j = 0; j < nb_of_moves; j++) {
-        Tmovement move_to_add = reverse_moves[nb_of_moves -j-1];
-        if (move_to_add == BOT_MV_SONICD) {
-          // If sonic drop is last move, just ignore it
-          if (j < nb_of_moves-1) {
-            // Replace sonic drops with a bunch of soft drops
-            do  {
-              moves[final_nb_of_moves++] = BOT_MV_SD;
-              moveTetriminoDown (&spin_check_tet);
-            } while(isNotObstacle (board_state, &spin_check_tet));
-            moveTetriminoUp(&spin_check_tet);
-            final_nb_of_moves--;
-          }
-        } else {
-          moves[final_nb_of_moves++] = move_to_add;
-          applyBotMoveToTetrimino (move_to_add, &spin_check_tet, board_state);
-        }
+        moves[final_nb_of_moves++] = reverse_moves[nb_of_moves -j-1];
       }
       moves[final_nb_of_moves++] = BOT_MV_HD;
 
@@ -498,18 +485,8 @@ static void generateMoves (Tbot *bot, Tnode *parent, Tbot_board* board_state, Tn
     // Stop if necessary (queue is empty)
     // Repeat with a new node
   }
-
-  // Free all the move nodes
-  for (Tcoordinate x = 0; x < VISITED_WIDTH; x++) {
-    for (Tcoordinate y = 0; y < C_MATRIX_HEIGHT; y++) {
-      for (Tbyte r = 0; r < NB_OF_ROTATIONS; r++) {
-        if (known_nodes[x][y][r]) {
-          destroyMoveNode (known_nodes[x][y][r]);
-        }
-      }
-    }
-  }
   
+
 }
 static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_queue, struct drand48_data *RNG_data) {
   // Generate the possible moves from the given node, and assigns them a score
@@ -565,32 +542,19 @@ static void expandNode (Tbot *bot, Tnode *search_tree_root, Tnext_queue *next_qu
 }
 
 // Various processing functions
-static void translate_moves (Tbot_movement *src_moves, Tbyte src_nb_of_moves,Tmovement *dest_moves, Tbyte *dest_nb_of_moves) {
+static Tmovement translate_move(Tbot_movement move) {
   // Translate moves from the bot's thinking to the game's thinking
-
-  // Space out side moves (hypertap, not DAS)
-  *dest_nb_of_moves = 0;
-  for (Tbyte i = 0; i < src_nb_of_moves; i++) {
-    Tmovement new_move;
-    switch (src_moves[i]) {
-      case BOT_MV_LEFT   : new_move = MV_LEFT   ; break;
-      case BOT_MV_RIGHT  : new_move = MV_RIGHT  ; break;
-      case BOT_MV_CW     : new_move = MV_CW     ; break;
-      case BOT_MV_CCW    : new_move = MV_CCW    ; break;
-      case BOT_MV_SD     : new_move = MV_SD     ; break;
-      case BOT_MV_SONICD : new_move = 0         ; break;
-      case BOT_MV_HD     : new_move = MV_HD     ; break;
-      case BOT_MV_HOLD   : new_move = MV_HOLD   ; break;
-      default            : new_move = 0;
-    }
-
-    dest_moves[*dest_nb_of_moves] = new_move;
-    (*dest_nb_of_moves)++;
-    if (isBotMovementInWord (src_moves+i, BOT_MV_LEFT) || isBotMovementInWord (src_moves+i, BOT_MV_RIGHT) || isBotMovementInWord (src_moves+i, BOT_MV_CW) || isBotMovementInWord (src_moves+i, BOT_MV_CCW)) {
-      dest_moves [*dest_nb_of_moves] = createMovementWord ();
-      (*dest_nb_of_moves)++;
-    }
+  switch (move) {
+    case BOT_MV_LEFT   : return MV_LEFT   ; break;
+    case BOT_MV_RIGHT  : return MV_RIGHT  ; break;
+    case BOT_MV_CW     : return MV_CW     ; break;
+    case BOT_MV_CCW    : return MV_CCW    ; break;
+    case BOT_MV_SD     : return MV_SD     ; break;
+    case BOT_MV_SONICD : return MV_SD     ; break;
+    case BOT_MV_HD     : return MV_HD     ; break;
+    case BOT_MV_HOLD   : return MV_HOLD   ; break;
   }
+  return 0;
 }
 static void reduceNextPieceOffset (Tnode *node) {
   // Recursive function to reduce the next piece offset by one when the thinking for the next piece starts
@@ -605,7 +569,7 @@ static void reduceNextPieceOffset (Tnode *node) {
 // Bot main loop
 static void *bot_TetrX (void *_bot) {
   Tbot *bot = (Tbot*) _bot;
-  Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
+  Tnode *search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL, &bot->pool);
   Tnext_queue global_next_queue = createNextQueue ();
   copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
   // Init the PRNG for random node selection
@@ -615,6 +579,7 @@ static void *bot_TetrX (void *_bot) {
   #ifdef LOG_BOT_THINKING
   // Setting up the log file for debugging
   FILE *logfile = fopen (LOGFILE, "w");
+  time_t time = clock();
   #endif
 
   while (!getShouldEndBotFlag (bot)) {
@@ -624,21 +589,25 @@ static void *bot_TetrX (void *_bot) {
       Tnode *best_child = getNodeIthChild (search_tree, 0);
       
       #ifdef LOG_BOT_THINKING
-      logBestNode (logfile, best_child);
+      logBestNode (logfile, best_child, bot, clock() - time);
       explored_nodes = 0;
       log_depth = 0;
+      time = clock();
       #endif
 
       // Output the moves of the next piece of the best path found
       bot->next_moves_length = best_child->nb_of_moves;
-      translate_moves ((Tbot_movement*) &(best_child->moves), best_child->nb_of_moves, bot->next_moves, &bot->next_moves_length);
+      for (int move = 0; move < best_child->nb_of_moves; move++) {
+        bot->next_moves[move] = best_child->moves[move];
+      }
+      
       // Signal that the next piece is ready.
       setOutputPieceReadyFlag (bot, true);
       // Reset the flag
       setShouldOutputPieceFlag (bot, false);
       // Free all the search tree except for the best node
       setNodeIthChild (search_tree, 0, NULL);
-      freeNode (search_tree);
+      freeNode (search_tree, &bot->pool);
       // Advance to think on the next board state
       search_tree = best_child;
       advanceNextQueue (&global_next_queue);
@@ -646,9 +615,9 @@ static void *bot_TetrX (void *_bot) {
     }
     if (getShouldResetSearchFlag (bot)) {
       // Free the current search tree
-      freeNode (search_tree);
+      freeNode (search_tree, &bot->pool);
       // Get the new values
-      search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL);
+      search_tree = createNode (convertBoardToBotBoard (&bot->master_board), 0, NULL, NULL, &bot->pool);
       copyNextQueue (&global_next_queue, getBoardNextQueue (&bot->master_board));
       // Reset the flag
       setShouldResetSearchFlag (bot, false);
@@ -676,7 +645,7 @@ static void *bot_TetrX (void *_bot) {
   #endif
 
   // Free the memory
-  freeNode (search_tree);
+  freeNode (search_tree, &bot->pool);
 
   return NULL;
 }
@@ -698,6 +667,8 @@ static void startBot (Tbot *bot, Tboard board) {
   }
   // Read the weights
   readWeights (bot->weights);
+  // Allocate the memory pool
+  bot->pool = createNodeMemoryPool();
 
   pthread_attr_t attr;
   pthread_attr_init(&attr);
@@ -706,8 +677,9 @@ static void startBot (Tbot *bot, Tboard board) {
   // Create the bot thread
   pthread_create (&(bot->thread_id), &attr, bot_TetrX, (void*) bot);
 }
-static Tmovement getBotMovement (Tbot *bot) {
+static Tmovement getBotMovement (Tbot *bot, Tboard *board) {
   static Tmove_queue next_moves; // Initialized to 0 because it is static
+  static Tbot_movement last_move = 0;
 
   if (getQueueSize (&next_moves) == 0) {
     // Ask the bot to prepare the input
@@ -725,17 +697,30 @@ static Tmovement getBotMovement (Tbot *bot) {
   }
 
   // next_moves acts as a stack
-  Tmovement res;
-  if (getQueueSize (&next_moves) == 0) {
-    res = createMovementWord ();
-  } else {
-    res = popMoveFromQueue (&next_moves);
+  Tbot_movement res = 0;
+  if (getQueueSize (&next_moves) != 0) {
+    switch (last_move) {
+      case 0: res = popMoveFromQueue(&next_moves);  break;
+      case BOT_MV_RIGHT: case BOT_MV_LEFT: res = 0; break;
+      case BOT_MV_SONICD:
+        // We are currently soft dropping
+        // If the tetrimino hit the floor, stop dropping
+        // If it is not, continue
+        res = isTetriminoOnFloor(board) ? 0 : BOT_MV_SONICD;
+        break;
+      default: break;
+    }
   }
-  return res;
+
+  last_move = res;
+  return translate_move(res);
 }
 static void endBot (Tbot *bot) {
   void *status;
   bot->should_end_bot_flag = true;
+  if (!freeNodeMemoryPool (bot->pool)) {
+    exit(-10);
+  }
   // pthread_join (bot->thread_id, &status); // If thread terminates before calling this, segfault
 }
 static void addBagToBot (Tbot *bot, Tshape *new_bag) {

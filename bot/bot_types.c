@@ -195,28 +195,22 @@ bool isBotBoardStateValid (Tbot_board *b) {
 Tbyte botClearLines (Tbot_board *b) {
   // Clears lines and returns the number of lines cleared.
   Tbot_matrix *tmp_matrix = getBotBoardMatrix (b);
-  Tcoordinate lines_to_clear[4];
-  Tbyte number_of_lines_to_clear = 0;
+  Tbyte cleared_lines = 0;
 
-  // Find full lines
-  for (Tcoordinate line = 0; line < C_MATRIX_HEIGHT; line++) {
+  // For each line, if it is full, pull down the ones above
+  // We assume that it is not possible to clear lines above the 25th
+  for (Tcoordinate line = 0; line < 25; line++) {
     if (isBotMatrixRowFull (tmp_matrix, line)) {
-      lines_to_clear[number_of_lines_to_clear] = line;
-      number_of_lines_to_clear++;
+      for (Tcoordinate i = line; i < C_MATRIX_HEIGHT-1; i++) {
+        setBotMatrixRow (tmp_matrix, i, getBotMatrixRow (tmp_matrix, i+1));
+      }
+      // Since the line-th matrix row has changed, we want to check the same one again
+      line--;
+      cleared_lines++;
     }
   }
 
-  // If no lines to clear, stop here
-  if (number_of_lines_to_clear == 0) return 0;
-
-  // Delete the full lines and pull down the ones above
-  for (Tcoordinate line_number = number_of_lines_to_clear-1; line_number >= 0; line_number--) {
-    for (Tcoordinate line = lines_to_clear[line_number]; line < C_MATRIX_HEIGHT-1; line++) {
-      setBotMatrixRow (tmp_matrix, line, getBotMatrixRow (tmp_matrix, line+1));
-    }
-  }
-
-  return number_of_lines_to_clear;
+  return cleared_lines;
 }
 void botLockActiveTetrimino (Tbot_board *b) {
   Ttetrimino *t = getBotBoardActiveTetrimino (b);
@@ -360,38 +354,61 @@ void botApplyInput (Tbot_board *b, Tnext_queue *next_queue, Tbot_movement mv) {
 //                        PATHFINDING STUFF
 // --------------------------------------------------------------------------
 
-TMoveNode* createMoveNode (Tbot_movement move, Ttetrimino* tetrimino, float distance, TMoveNode* parent) {
-  TMoveNode* node = (TMoveNode*) malloc (sizeof(TMoveNode));
-
+void setMoveNode (TMoveNode* node, Tbot_movement move, Ttetrimino* tetrimino, Tbyte distance, TMoveNode* parent) {
   node->move = move;
   copyTetrimino (&(node->tetrimino), tetrimino);
   node->dist = distance;
   node->best_parent = parent;
-
-  return node;
-}
-void destroyMoveNode (TMoveNode *node) {
-  free (node);
 }
 
 void addMoveNodeToList (TMoveNode* mvnode, TMoveNodeList* list) {
-  list->items[list->size] = mvnode;
-  list->size++;
+  switch (mvnode->dist) {
+  case 0:
+    list->items_0[list->tail_0] = mvnode;
+    list->tail_0 = (list->tail_0 + 1) % MOVE_NODE_LIST_MAX_ITEMS;
+    break;
+  
+  case 1:
+    list->items_1[list->tail_1] = mvnode;
+    list->tail_1 = (list->tail_1 + 1) % MOVE_NODE_LIST_MAX_ITEMS;
+    break;
+
+  default:
+    list->items_else[list->size_else] = mvnode;
+    list->size_else++;
+    break;
+  }
 }
 TMoveNode* popMinMoveNodeFromList (TMoveNodeList *list) {
   // Removes and returns the node with smallest distance from start
   // Returns NULL is queue is empty
 
-  if (list->size == 0) {
+  // First look in the zero and 1 distances
+  if (list->head_0 != list->tail_0) {
+    TMoveNode* res = list->items_0[list->head_0];
+    list->head_0 = (list->head_0 + 1) % MOVE_NODE_LIST_MAX_ITEMS;
+    return res;
+  }
+  
+  if (list->head_1 != list->tail_1) {
+    TMoveNode* res = list->items_1[list->head_1];
+    list->head_1 = (list->head_1 + 1) % MOVE_NODE_LIST_MAX_ITEMS;
+    return res;
+  }
+
+  if (list->size_else == 0) {
     return NULL;
   }
 
+  // Then look in the other distances. Reaching this code should
+  // be extremely rare, so we do not care about efficiency
   float min = 1.0/0.0; // Distances start from 0
   TMoveNode* min_node;
   unsigned int min_i;
 
-  for (unsigned int i = 0; i < list->size; i++) {
-    TMoveNode* min_candidate = list->items[i];
+  // We find the node with the least distance
+  for (unsigned int i = 0; i < list->size_else; i++) {
+    TMoveNode* min_candidate = list->items_else[i];
     if (min_candidate->dist < min) {
       min = min_candidate->dist;
       min_node = min_candidate;
@@ -399,10 +416,11 @@ TMoveNode* popMinMoveNodeFromList (TMoveNodeList *list) {
     }
   }
 
-  for (unsigned int i = min_i; i < list->size; i++) {
-    list->items[i] = list->items[i+1];
+  // Delete the min node from the list by shifting the others
+  for (unsigned int i = min_i; i < list->size_else; i++) {
+    list->items_else[i] = list->items_else[i+1];
   }
-  list->size--;
+  list->size_else--;
 
   return min_node;
 }

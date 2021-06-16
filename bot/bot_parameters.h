@@ -9,7 +9,7 @@
 #define BOT_MATRIX_HEIGHT 45
 #define BOT_MATRIX_WIDTH 10
 
-#define MOVE_NODE_LIST_MAX_ITEMS 1000
+#define MOVE_NODE_LIST_MAX_ITEMS 500
 
 // For move queue and bot struct
 #define MAX_MOVES 80
@@ -84,7 +84,7 @@ typedef enum {
 } Tweights_enum;
 
 static const char *weight_str[] = {
-  FOREACH_WEIGHT(GENERATE_STRING)
+  FOREACH_WEIGHT(GENERATE_STRING) // "clear1", "clear2", ...
 };
 
 // Function to create a file with the default weights

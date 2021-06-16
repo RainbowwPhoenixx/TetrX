@@ -20,7 +20,7 @@ typedef struct {
   volatile bool should_end_bot_flag;
   volatile bool new_pieces_ready_flag;
 
-  Tmovement next_moves[MAX_MOVES];
+  Tbot_movement next_moves[MAX_MOVES];
   Tbyte next_moves_length;
 
   Tnext_queue new_pieces;
@@ -29,6 +29,8 @@ typedef struct {
   Tbyte max_previews;
   
   float weights[WEIGHT_COUNT];
+  
+  Tnode_memory_pool pool;
 } Tbot;
 
 // Interact with the bot

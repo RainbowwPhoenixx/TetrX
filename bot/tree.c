@@ -1,4 +1,8 @@
 #include "tree.h"
+// --------------------------------------------------------------------------
+//                               NODE
+// --------------------------------------------------------------------------
+
 
 // Accessors
 Tbot_board *getNodeBotBoard (Tnode *node) {
@@ -120,8 +124,8 @@ void sortNodeChildren (Tnode* node) {
   quicksortNodeChildren (node->children, 0, getNodeNbOfChildren (node)-1);
 }
 
-Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tbot_movement *moves, Tnode *parent) {
-  Tnode *tree = calloc (1, sizeof(Tnode));
+Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tbot_movement *moves, Tnode *parent, Tnode_memory_pool *pool) {
+  Tnode *tree = getNodeFromPool(pool);
 
   setNodeBotBoard (tree, board);
   setNodeNbOfMoves (tree, nb_of_moves);
@@ -136,14 +140,71 @@ Tnode *createNode (Tbot_board board, Tbyte nb_of_moves, Tbot_movement *moves, Tn
 
   return tree;
 }
-void freeNode (Tnode *tree) {
+void freeNode (Tnode *tree, Tnode_memory_pool *pool) {
   // Frees the node and all its descendants
   for (Tbyte i = 0; i < getNodeNbOfChildren (tree); i++) {
     Tnode *node = getNodeIthChild (tree, i);
     if (node != NULL) {
-      freeNode (node);
+      freeNode (node, pool);
     }
   }
 
-  free (tree);
+  giveNodeToPool (pool, tree);
+}
+
+// --------------------------------------------------------------------------
+//                            NODE MEMORY POOL
+// --------------------------------------------------------------------------
+
+#define INITIAL_NODE_ALLOCATION 100000
+#define NODE_REFILL_AMOUNT 10000
+
+Tnode_memory_pool createNodeMemoryPool() {
+  // Creates a memory pool with an initial capacity
+  Tnode_memory_pool pool;
+  pool.free_node_count = INITIAL_NODE_ALLOCATION;
+  pool.total_node_count = INITIAL_NODE_ALLOCATION;
+  
+  // Allocate all the nodes
+  for (uint64_t i = 0; i < INITIAL_NODE_ALLOCATION; i++) {
+    pool.free_nodes[i] = (Tnode*) calloc(1, sizeof(Tnode));
+  }
+  
+  return pool;
+}
+bool freeNodeMemoryPool(Tnode_memory_pool pool) {
+  // If all the nodes have been given back
+  if (pool.free_node_count == pool.total_node_count) {
+    // Free all remaining nodes
+    for (uint64_t i = 0; i < pool.total_node_count; i++) {
+      free(pool.free_nodes[i]);
+    }
+    // return success
+    return true;
+  }
+  
+  // return failure
+  return false;
+}
+
+Tnode* getNodeFromPool(Tnode_memory_pool* pool) {
+  // TODO: Check if we need to allocate more nodes
+  // If there ar no more available nodes allocate some more
+  if (pool->free_node_count == 0) {
+    pool->free_node_count += NODE_REFILL_AMOUNT;
+    pool->total_node_count += NODE_REFILL_AMOUNT;
+    
+    for (uint64_t i = 0; i < NODE_REFILL_AMOUNT; i++) {
+      pool->free_nodes[i] = (Tnode*) calloc(1, sizeof(Tnode));
+    }
+  }
+  
+  pool->free_node_count--;
+  return pool->free_nodes[pool->free_node_count];
+}
+void giveNodeToPool(Tnode_memory_pool* pool, Tnode* node) {
+  pool->free_nodes[pool->free_node_count] = node;
+  pool->free_node_count++;
+  
+  // TODO: Check if we should free some nodes
 }
